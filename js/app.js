@@ -6,7 +6,7 @@ import {
   updateMeta, search, root, closeModal, renderTrash, modal, cycleNote
 } from "./ui.js";
 import {
-  createNote, createFolder, schedule, saveCurrent, deleteCurrent, toggleFavorite
+  createNote, createFolder, schedule, saveCurrent, deleteNote, toggleFavorite
 } from "./crud.js";
 import { setMode } from "./drive.js";
 import { settings, askAI } from "./ai.js";
@@ -28,7 +28,11 @@ $("aiSetupBtn").onclick = settings;
 $("title").oninput = schedule;
 $("content").oninput = () => { updateMeta(); schedule(); };
 $("search").oninput = e => search(e.target.value);
-$("delete").onclick = deleteCurrent;
+$("delete").onclick = () => {
+  const n = state.items.find(x => x.id === state.selected);
+  if (!n) return toast("Select a note first");
+  deleteNote(n);
+};
 $("star").onclick = () => {
   const n = state.items.find(x => x.id === state.selected);
   if (!n) return toast("Select a note first");
