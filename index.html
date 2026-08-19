@@ -50,11 +50,15 @@
       <div class="meta" id="meta">0 characters</div>
     </div>
   </div>
-  <div class="ai">
+  <div class="ai" id="aiPanel">
     <div class="ai-mark">✦</div>
     <div class="ai-copy"><div class="ai-title">AI Assistant <small style="color:#9a9b98;font-size:8px"> BETA</small></div><p>Review, summarize, or ask anything about this note.</p></div>
-    <select id="model"><option>openai/gpt-4o-mini</option><option>google/gemini-2.5-flash</option><option>anthropic/claude-3.5-haiku</option></select>
-    <button class="raised" id="askAI">✦ Ask AI</button>
+    <div class="ai-setup" id="aiSetup">
+      <span class="ai-setup-label">Not set up</span>
+      <button class="raised" id="aiSetupBtn">Set up</button>
+    </div>
+    <select id="model" hidden><option>openai/gpt-4o-mini</option><option>google/gemini-2.5-flash</option><option>anthropic/claude-3.5-haiku</option></select>
+    <button class="raised" id="askAI" hidden>✦ Ask AI</button>
   </div>
 </section>
 <nav class="mobile-nav" id="mobileNav">

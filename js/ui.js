@@ -134,3 +134,15 @@ export function renderModelOptions() {
   state.endpoints.forEach((e, i) => { const o = document.createElement("option"); o.value = "custom:" + i; o.textContent = e.name; sel.appendChild(o); });
   if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
 }
+
+export function aiConfigured() {
+  return !!(state.orKey || state.endpoints.length);
+}
+
+export function renderAI() {
+  const on = aiConfigured();
+  $("aiPanel").classList.toggle("ai-off", !on);
+  $("aiSetup").hidden = on;
+  $("model").hidden = !on;
+  $("askAI").hidden = !on;
+}

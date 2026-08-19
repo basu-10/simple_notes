@@ -1,10 +1,11 @@
 import { $, esc, toast } from "./utils.js";
 import { state } from "./state.js";
 import { setting, saveSetting } from "./db.js";
-import { modal, closeModal, renderModelOptions } from "./ui.js";
+import { modal, closeModal, renderModelOptions, renderAI } from "./ui.js";
 
 export async function settings() {
   let key = await setting("orKey") || "";
+  state.orKey = key;
   state.endpoints = await setting("endpoints") || [];
   modal(`<h2>Settings</h2><p>Local data stays in IndexedDB. Requests are sent directly from this browser (BYOK). Add custom model endpoints to use them from the AI assistant dropdown.</p>
   <div class="field"><label>OpenRouter API key</label><input id="orKey" type="password" value="${esc(key)}" placeholder="sk-or-v1-…"></div>
@@ -43,9 +44,11 @@ export async function settings() {
 
   $("cancel").onclick = closeModal;
   $("save").onclick = async () => {
-    await saveSetting("orKey", $("orKey").value.trim());
+    const orKey = $("orKey").value.trim();
+    await saveSetting("orKey", orKey);
     await saveSetting("endpoints", state.endpoints);
-    closeModal(); renderModelOptions(); toast("Settings saved");
+    state.orKey = orKey;
+    closeModal(); renderModelOptions(); renderAI(); toast("Settings saved");
   };
 }
 

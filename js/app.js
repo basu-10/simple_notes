@@ -2,7 +2,7 @@ import { $, uid, now, toast } from "./utils.js";
 import { state } from "./state.js";
 import { openDB, all, setting, put, updateDbSize } from "./db.js";
 import {
-  select, renderAll, renderModelOptions, setMobileView,
+  select, renderAll, renderModelOptions, renderAI, setMobileView,
   updateMeta, search, root, closeModal
 } from "./ui.js";
 import {
@@ -22,6 +22,7 @@ $("localMode").onclick = () => setMode("local");
 $("driveMode").onclick = () => setMode("drive");
 $("settings").onclick = settings;
 $("askAI").onclick = askAI;
+$("aiSetupBtn").onclick = settings;
 $("title").oninput = schedule;
 $("content").oninput = () => { updateMeta(); schedule(); };
 $("search").oninput = e => search(e.target.value);
@@ -51,7 +52,9 @@ document.addEventListener("keydown", e => {
   setMobileView("folders");
   updateDbSize();
   state.endpoints = await setting("endpoints") || [];
+  state.orKey = await setting("orKey") || "";
   renderModelOptions();
+  renderAI();
   let n = state.items.find(x => x.type === "note");
   n ? select(n.id) : await createNote();
   if (await setting("mode") === "drive") setMode("drive");

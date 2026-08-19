@@ -8,5 +8,6 @@ export const state = {
   mode: "local",
   driveToken: null,
   endpoints: [],
+  orKey: "",
   timer: null
 };
