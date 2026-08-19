@@ -9,7 +9,7 @@ import {
   createNote, createFolder, schedule, saveCurrent, deleteNote, toggleFavorite
 } from "./crud.js";
 import { setMode } from "./drive.js";
-import { settings, askAI } from "./ai.js";
+import { settings, askAI, loadProviders } from "./ai.js";
 import { exportData, importData } from "./export-import.js";
 import { initTheme, cycleTheme } from "./theme.js";
 import { initShareIn } from "./share-in.js";
@@ -78,10 +78,10 @@ function showShortcuts() {
   state.folder = root().id;
   setMobileView("folders");
   updateDbSize();
-  state.endpoints = await setting("endpoints") || [];
-  state.orKey = await setting("orKey") || "";
-  renderModelOptions();
+  state.providers = await loadProviders();
+  renderProviderOptions();
   renderAI();
+  $("provider").onchange = renderModelOptions;
   let n = state.items.find(x => x.type === "note");
   n ? select(n.id) : await createNote();
   if (await setting("mode") === "drive") setMode("drive");

@@ -327,7 +327,22 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
  .endpoint-add .row{display:flex;gap:7px}
  .endpoint-add input{width:100%}
  .endpoint-add .primary{height:40px;flex:none;padding:0 16px}
- .endpoint-empty{font-size:10px;color:var(--muted);margin-bottom:9px}
+  .endpoint-empty{font-size:10px;color:var(--muted);margin-bottom:9px}
+  .provider-list{display:flex;flex-direction:column;gap:7px;margin-bottom:9px;max-height:180px;overflow:auto}
+  .provider-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:11px;background:var(--fill);box-shadow:inset 1px 1px 3px var(--inset-line),inset -1px -1px 3px var(--inset-hi);font-size:11px}
+  .provider-item .pv-name{font-weight:600;flex:none;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .provider-item .pv-meta{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .provider-item .pv-edit{padding:4px 10px;border-radius:11px;font-size:10px;color:var(--muted);background:var(--fill-2);flex:none}
+  .provider-item .pv-edit:hover{color:var(--text)}
+  .provider-item .pv-del{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:var(--faint);font-size:15px;flex:none}
+  .provider-item .pv-del:hover{color:var(--err)}
+  .provider-form{display:grid;gap:10px;padding:14px;margin:6px 0 2px;border-radius:14px;background:var(--fill);box-shadow:inset 1px 1px 3px var(--inset-line),inset -1px -1px 3px var(--inset-hi)}
+  .provider-form .primary{height:40px;flex:none;padding:0 16px}
+  .model-list{display:flex;flex-direction:column;gap:6px;margin-bottom:6px;max-height:140px;overflow:auto}
+  .model-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:9px;background:var(--fill-2);font-size:11px}
+  .model-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .model-item .pv-del{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:var(--faint);font-size:14px;flex:none}
+  .model-item .pv-del:hover{color:var(--err)}
  @media(max-width:700px){
   .app{padding:6px}
   .shell{display:block;position:relative;padding:7px;border-radius:24px;overflow:hidden}
