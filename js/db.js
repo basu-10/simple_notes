@@ -58,18 +58,35 @@ export function saveSetting(k, v) {
   });
 }
 
+async function storageBytes() {
+  const items = await all();
+  let bytes = 0;
+  for (const x of items) bytes += new Blob([JSON.stringify(x)]).size;
+  return bytes;
+}
+
 export async function updateDbSize() {
   const el = $("dbSize");
   if (!el) return;
+  const fmt = v => v < 1024 ? `${v} B`
+    : v < 1048576 ? `${(v / 1024).toFixed(1)} KB`
+    : v < 1073741824 ? `${(v / 1048576).toFixed(1)} MB`
+    : `${(v / 1073741824).toFixed(2)} GB`;
+  const withTimeout = (p, ms) =>
+    Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
   try {
-    const e = await navigator.storage.estimate();
-    const n = e.usage || 0, q = e.quota || 0;
-    const fmt = v => v < 1024 ? `${v} B`
-      : v < 1048576 ? `${(v / 1024).toFixed(1)} KB`
-      : v < 1073741824 ? `${(v / 1048576).toFixed(1)} MB`
-      : `${(v / 1073741824).toFixed(2)} GB`;
-    el.textContent = `${fmt(n)} used${q ? ` · ${fmt(q)} quota` : ""}`;
+    if (navigator.storage && navigator.storage.estimate) {
+      const e = await withTimeout(navigator.storage.estimate(), 3000);
+      const n = e.usage || 0, q = e.quota || 0;
+      el.textContent = q ? `${fmt(n)} used · ${fmt(q)} quota` : `${fmt(n)} used`;
+      return;
+    }
+    throw new Error("unsupported");
   } catch {
-    el.textContent = "Size unavailable";
+    try {
+      el.textContent = `${fmt(await storageBytes())} used`;
+    } catch {
+      el.textContent = "Size unavailable";
+    }
   }
 }
