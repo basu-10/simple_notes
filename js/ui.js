@@ -334,9 +334,10 @@ export function aiConfigured() {
 
 export function renderAI() {
   const on = aiConfigured();
-  $("aiPanel").classList.toggle("ai-off", !on);
-  $("aiSetup").hidden = on;
-  $("provider").hidden = !on;
-  $("model").hidden = !on;
-  $("askAI").hidden = !on;
+  const el = (id) => $(id);
+  if (el("aiPanel")) el("aiPanel").classList.toggle("ai-off", !on);
+  if (el("aiSetup")) el("aiSetup").hidden = on;
+  if (el("provider")) el("provider").hidden = !on;
+  if (el("model")) el("model").hidden = !on;
+  if (el("askAI")) el("askAI").hidden = !on;
 }

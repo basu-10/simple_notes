@@ -52,7 +52,7 @@ There is **no application backend**. All persistence is client-side
 | `ui.js` | Rendering & DOM: folder tree, note list, editor, modals, toasts, AI panel, mobile view switching, model dropdown. |
 | `crud.js` | Create/update/delete logic for notes & folders, autosave scheduling, favorite toggle. |
 | `theme.js` | Appearance logic: Auto/Dark/Light cycle, system preference listener, applies `data-theme` on `<html>`, persists to localStorage (with IndexedDB fallback). |
-| `ai.js` | Settings modal (OpenRouter key, custom endpoints) and "Ask AI" review call. |
+| `ai.js` | Settings modal (provider presets + "Ask AI" review call). `loadProviders()` migrates legacy `orKey`/`endpoints` settings into the `providers` array. |
 | `drive.js` | Google Drive BYOK OAuth connect, load notes from Drive, sync note to Drive as plain-text file. |
 | `export-import.js` | Export and import of notes in portable formats. |
 | `utils.js` | Helpers: DOM `$`, `uid`, `now`, `esc`, `toast`, etc. |
@@ -66,7 +66,7 @@ Database name/version are defined in `db.js`.
   - Indexes: by_parent, by_type, by_type_parent_updated, by_favorite, by_deleted.
   - Deletion is **soft** (sets `deletedAt`); trash view filters on it.
 - **Store `settings`** (keyPath `key`): arbitrary key/value. Known keys:
-  `theme`, `mode`, `orKey` (OpenRouter), `endpoints` (custom AI endpoints).
+   `theme`, `mode`, `providers` (AI provider presets: `{id, name, type:"openrouter"|"lmstudio", key, models[]}`). Legacy `orKey`/`endpoints` keys are migrated into `providers` by `loadProviders()`.
 
 ### Persistence split
 - **Theme preference**: primarily `localStorage` (key `notezen-theme`);
@@ -90,9 +90,11 @@ Database name/version are defined in `db.js`.
   Identity Services, the app requests a token client-side and reads/writes
   notes as `text/plain` files tagged with a custom app property. All traffic is
   browser → Google directly.
-- **AI**: User supplies an OpenRouter key (or custom OpenAI-compatible
-  endpoint URL + optional key). "Ask AI" POSTs the current note text directly
-  to the provider's chat-completions endpoint. Responses shown in a modal.
+- **AI**: User configures **provider presets** (OpenRouter with a required key, or
+  LM Studio / local with a fixed `localhost:1234` endpoint and no key). Each
+  preset lists one or more **model ids**. "Ask AI" reads the selected provider +
+  model from the editor dropdowns and POSTs the current note text directly to the
+  provider's chat-completions endpoint. Responses shown in a modal.
 - **Security posture**: No vendor server sees user data. Keys/tokens live only
   in the browser (IndexedDB/localStorage). This is a deliberate privacy design.
 

@@ -2,7 +2,7 @@ import { $, uid, now, toast } from "./utils.js";
 import { state } from "./state.js";
 import { openDB, all, setting, put, updateDbSize } from "./db.js";
 import {
-  select, renderAll, renderModelOptions, renderAI, setMobileView,
+  select, renderAll, renderModelOptions, renderProviderOptions, renderAI, setMobileView,
   updateMeta, search, root, closeModal, renderTrash, modal, cycleNote
 } from "./ui.js";
 import {
@@ -81,7 +81,7 @@ function showShortcuts() {
   state.providers = await loadProviders();
   renderProviderOptions();
   renderAI();
-  $("provider").onchange = renderModelOptions;
+  if ($("provider")) $("provider").onchange = renderModelOptions;
   let n = state.items.find(x => x.type === "note");
   n ? select(n.id) : await createNote();
   if (await setting("mode") === "drive") setMode("drive");
