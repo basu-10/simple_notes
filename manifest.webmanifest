@@ -2,7 +2,7 @@
   "name": "NoteZen",
   "short_name": "NoteZen",
   "description": "A calm, local-first note taking app.",
-  "start_url": "./",
+  "start_url": "./app.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

@@ -2,6 +2,7 @@ const CACHE = "notezen-v4";
 const ASSETS = [
   "./",
   "./index.html",
+  "./app.html",
   "./manifest.webmanifest",
   "./icon.svg",
   "./css/styles.css",
