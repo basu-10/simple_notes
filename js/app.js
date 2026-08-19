@@ -59,3 +59,7 @@ document.addEventListener("keydown", e => {
   n ? select(n.id) : await createNote();
   if (await setting("mode") === "drive") setMode("drive");
 })().catch(e => { console.error(e); toast("Could not initialize"); });
+
+if ("serviceWorker" in navigator) {
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(err => console.warn("SW registration failed", err)));
+}

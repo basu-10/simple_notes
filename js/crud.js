@@ -39,12 +39,16 @@ export async function createFolder() {
 
 export async function rename(x) {
   if (x.type !== "folder") {
-    let n = prompt("Rename", x.title);
-    if (!n?.trim()) return;
-    x.title = n.trim(); x.updatedAt = now();
-    await put(x); await updateDbSize();
-    if (x.id === state.selected) select(x.id);
-    renderAll();
+    modal(`<h2>Rename note</h2><div class="field"><label>Title</label><input id="noteTitle" value="${esc(x.title)}"></div><div class="modal-actions"><button id="cancel">Cancel</button><button class="primary" id="saveNote">Save</button></div>`);
+    $("cancel").onclick = closeModal;
+    $("saveNote").onclick = async () => {
+      let t = $("noteTitle").value.trim();
+      x.title = t; x.updatedAt = now();
+      await put(x); await updateDbSize();
+      if (x.id === state.selected) select(x.id);
+      closeModal(); renderAll(); toast("Renamed");
+    };
+    $("noteTitle").focus();
     return;
   }
   const colors = [["#777976", "Graphite"], ["#85877f", "Olive Gray"], ["#8a8179", "Warm Stone"], ["#7f8787", "Slate"], ["#8d7f86", "Mauve Gray"], ["#777f8a", "Blue Gray"], ["#8b8171", "Sand"], ["#696b69", "Charcoal"]];
@@ -80,12 +84,71 @@ export async function saveCurrent() {
 export async function deleteCurrent() {
   let n = state.items.find(x => x.id === state.selected);
   if (!n) return;
-  if (confirm("Delete this note?")) {
-    await del(n.id);
-    updateDbSize();
-    state.items = state.items.filter(x => x.id !== n.id);
+  await deleteNote(n);
+}
+
+export async function deleteNote(x) {
+  if (!confirm("Delete this note?")) return;
+  await del(x.id);
+  await updateDbSize();
+  state.items = state.items.filter(i => i.id !== x.id);
+  if (state.selected === x.id) {
     state.selected = null;
-    let next = kids(state.folder).find(x => x.type === "note");
+    let next = kids(state.folder).find(i => i.type === "note");
     next ? select(next.id) : (state.folder = state.folder, renderAll(), $("title").value = "", $("content").value = "");
+  } else {
+    renderAll();
   }
+  toast("Note deleted");
+}
+
+export async function deleteFolder(f) {
+  let children = kids(f.id);
+  let msg = children.length
+    ? `Delete "${f.name}" and move its ${children.length} item(s) to the parent folder?`
+    : `Delete folder "${f.name}"?`;
+  if (!confirm(msg)) return;
+  let parentId = f.parentId ?? null;
+  for (let c of children) { c.parentId = parentId; c.updatedAt = now(); await put(c); }
+  await del(f.id);
+  await updateDbSize();
+  state.items = state.items.filter(i => i.id !== f.id);
+  if (state.folder === f.id) state.folder = parentId;
+  renderAll();
+  toast("Folder deleted");
+}
+
+export async function duplicateNote(x) {
+  let copy = {
+    id: uid(), type: "note", parentId: x.parentId,
+    title: x.title ? x.title + " (copy)" : "Untitled note",
+    content: x.content || "", createdAt: now(), updatedAt: now()
+  };
+  state.items.push(copy);
+  await put(copy);
+  await updateDbSize();
+  renderAll();
+  select(copy.id);
+  toast("Note duplicated");
+}
+
+export async function moveNote(x) {
+  const folders = state.items.filter(f => f.type === "folder").sort((a, b) => a.name.localeCompare(b.name));
+  modal(`<h2>Move note</h2><p>Choose the destination folder.</p><div class="folder-picker" id="picker"></div><div class="modal-actions"><button id="cancel">Cancel</button></div>`);
+  const picker = $("picker");
+  folders.forEach(f => {
+    const row = document.createElement("button");
+    row.className = "picker-row" + (f.id === x.parentId ? " current" : "");
+    row.innerHTML = `<span class="folder-dot" style="background:${f.color || "#777976"}"></span><span>${esc(f.name)}</span>` +
+      (f.id === x.parentId ? `<small>(current)</small>` : "");
+    row.onclick = async () => {
+      x.parentId = f.id; x.updatedAt = now();
+      await put(x); await updateDbSize();
+      if (state.selected === x.id) state.folder = f.id;
+      closeModal(); renderAll();
+      toast("Moved to " + f.name);
+    };
+    picker.appendChild(row);
+  });
+  $("cancel").onclick = closeModal;
 }

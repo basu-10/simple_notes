@@ -1,6 +1,6 @@
 import { $, esc, toast } from "./utils.js";
 import { state } from "./state.js";
-import { rename } from "./crud.js";
+import { rename, moveNote, duplicateNote, deleteNote, deleteFolder } from "./crud.js";
 
 export function kids(id) {
   return state.items.filter(x => x.parentId === id);
@@ -40,7 +40,14 @@ export function renderTree() {
       const name = document.createElement("span"); name.textContent = f.name;
       const count = document.createElement("span"); count.className = "count";
       count.textContent = kids(f.id).filter(x => x.type === "note").length;
-      row.append(twist, color, icon, name, count);
+      const kebab = document.createElement("button"); kebab.className = "row-menu"; kebab.title = "Folder actions";
+      kebab.innerHTML = "&#8942;";
+      kebab.onclick = (e) => {
+        e.stopPropagation();
+        const r = kebab.getBoundingClientRect();
+        openMenu(r.right - 4, r.bottom + 4, folderMenu(f));
+      };
+      row.append(twist, color, icon, name, count, kebab);
       twist.onclick = (e) => {
         e.stopPropagation();
         if (!hasKids) return;
@@ -50,6 +57,7 @@ export function renderTree() {
       };
       row.onclick = () => { state.folder = f.id; state.expanded.add(f.id); renderAll(); if (innerWidth <= 700) setMobileView("notes"); };
       row.ondblclick = () => rename(f);
+      longPress(row, (cx, cy) => openMenu(cx, cy, folderMenu(f)));
       t.appendChild(row);
       if (open) draw(f.id, depth + 1);
     });
@@ -73,9 +81,17 @@ export function renderNotes() {
     head.append(title, date);
     const preview = document.createElement("div"); preview.className = "note-preview";
     preview.textContent = (x.content || "").replace(/\s+/g, " ").slice(0, 110);
-    card.append(head, preview);
+    const kebab = document.createElement("button"); kebab.className = "card-menu"; kebab.title = "Note actions";
+    kebab.innerHTML = "&#8942;";
+    kebab.onclick = (e) => {
+      e.stopPropagation();
+      const r = kebab.getBoundingClientRect();
+      openMenu(r.right - 4, r.bottom + 4, noteMenu(x));
+    };
+    card.append(head, preview, kebab);
     card.onclick = () => select(x.id);
     card.ondblclick = () => rename(x);
+    longPress(card, (cx, cy) => openMenu(cx, cy, noteMenu(x)));
     list.appendChild(card);
     if (i < notes.length - 1) { const d = document.createElement("div"); d.className = "note-divider"; list.appendChild(d); }
   });
@@ -109,6 +125,72 @@ export function modal(html) {
 
 export function closeModal() {
   $("modalBackdrop").classList.remove("open");
+}
+
+const ICONS = {
+  rename: '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  move: '<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>',
+  copy: '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+  trash: '<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>'
+};
+
+export function openMenu(x, y, items) {
+  const m = $("contextMenu");
+  m.innerHTML = "";
+  items.forEach(it => {
+    const b = document.createElement("button");
+    b.className = "ctx-item" + (it.danger ? " danger" : "");
+    b.innerHTML = (it.icon ? ICONS[it.icon] : "") + `<span>${esc(it.label)}</span>`;
+    b.onclick = () => { closeMenu(); it.onClick(); };
+    m.appendChild(b);
+  });
+  m.style.display = "block";
+  const r = m.getBoundingClientRect();
+  m.style.left = Math.max(8, Math.min(x, innerWidth - r.width - 8)) + "px";
+  m.style.top = Math.max(8, Math.min(y, innerHeight - r.height - 8)) + "px";
+  requestAnimationFrame(() => $("ctxBackdrop").classList.add("open"));
+  $("ctxBackdrop").onclick = closeMenu;
+  window.addEventListener("scroll", closeMenu, { once: true, passive: true });
+  window.addEventListener("resize", closeMenu, { once: true });
+}
+
+export function closeMenu() {
+  const m = $("contextMenu");
+  if (m) m.style.display = "none";
+  const b = $("ctxBackdrop");
+  if (b) b.classList.remove("open");
+}
+
+export function noteMenu(x) {
+  return [
+    { label: "Move to…", icon: "move", onClick: () => moveNote(x) },
+    { label: "Duplicate", icon: "copy", onClick: () => duplicateNote(x) },
+    { label: "Rename", icon: "rename", onClick: () => rename(x) },
+    { label: "Delete", icon: "trash", danger: true, onClick: () => deleteNote(x) }
+  ];
+}
+
+export function folderMenu(f) {
+  return [
+    { label: "Rename", icon: "rename", onClick: () => rename(f) },
+    { label: "Delete", icon: "trash", danger: true, onClick: () => deleteFolder(f) }
+  ];
+}
+
+export function longPress(el, fn) {
+  let t, sx = 0, sy = 0, fired = false;
+  el.addEventListener("touchstart", e => {
+    const p = e.touches[0];
+    sx = p.clientX; sy = p.clientY; fired = false;
+    t = setTimeout(() => { fired = true; fn(sx, sy); }, 480);
+  }, { passive: true });
+  el.addEventListener("touchmove", e => {
+    const p = e.touches[0];
+    if (Math.abs(p.clientX - sx) > 10 || Math.abs(p.clientY - sy) > 10) clearTimeout(t);
+  }, { passive: true });
+  el.addEventListener("touchend", () => clearTimeout(t));
+  el.addEventListener("click", e => { if (fired) { e.stopPropagation(); e.preventDefault(); fired = false; } }, true);
+  el.addEventListener("contextmenu", e => { e.preventDefault(); const p = e; fn(p.clientX, p.clientY); });
 }
 
 export function search(q) {
