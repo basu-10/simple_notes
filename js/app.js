@@ -11,6 +11,7 @@ import {
 import { setMode } from "./drive.js";
 import { settings, askAI } from "./ai.js";
 import { exportData, importData } from "./export-import.js";
+import { initTheme, cycleTheme } from "./theme.js";
 
 $("newNote").onclick = createNote;
 $("newFolderBtn").onclick = createFolder;
@@ -32,7 +33,7 @@ $("star").onclick = () => {
   if (!n) return toast("Select a note first");
   toggleFavorite(n);
 };
-$("theme").onclick = () => toast("Monochrome appearance is fixed");
+$("theme").onclick = cycleTheme;
 $("back").onclick = () => cycleNote(-1);
 $("forward").onclick = () => cycleNote(1);
 $("modalBackdrop").onclick = e => e.target === e.currentTarget && closeModal();
@@ -61,6 +62,7 @@ function showShortcuts() {
 
 (async () => {
   await openDB();
+  await initTheme();
   state.items = await all();
   state.items.filter(x => x.type === "folder" && !x.color).forEach(x => x.color = "#777976");
   if (!state.items.some(x => x.type === "folder" && !x.parentId)) {
