@@ -35,10 +35,12 @@ function validateItem(x) {
   return "Unknown type: " + (x.type ?? "none");
 }
 
-function filesHtml(rows) {
+function filesHtml(rows, selectable) {
   if (!rows.length) return `<div class="file-empty">No items found.</div>`;
-  return `<div class="file-list">` + rows.map(r => `
-    <div class="file-row${r.error ? " err" : ""}">
+  const tag = selectable ? "label" : "div";
+  return `<div class="file-list">` + rows.map((r, i) => `
+    <${tag} class="file-row${r.error ? " err" : ""}">
+      ${selectable ? `<input type="checkbox" class="file-check" data-index="${i}" checked>` : ""}
       <div class="file-icon">${r.type === "folder" ? "📁" : "📝"}</div>
       <div class="file-main">
         <span class="file-name">${esc(itemName(r.item))}</span>
@@ -49,7 +51,7 @@ function filesHtml(rows) {
           ? `<span class="file-error">${esc(r.error)}</span>`
           : `<span class="file-size">${formatSize(r.size)}</span>`}
       </div>
-    </div>`).join("") + `</div>`;
+    </${tag}>`).join("") + `</div>`;
 }
 
 function summaryHtml(ok, errors, totalSize) {
@@ -62,26 +64,17 @@ function summaryHtml(ok, errors, totalSize) {
 export async function exportData() {
   const items = state.items;
   const rows = items.map(item => ({ item, type: item.type, size: itemSize(item), error: null }));
-  const payload = {
-    format: "notezen",
-    version: 2,
-    schemaVersion: 2,
-    exportedAt: now(),
-    items
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const fileName = "notezen-export-" + now().slice(0, 10) + ".notezen";
-  const totalSize = blob.size;
 
   modal(`
     <h2>Export</h2>
-    <p>Review the files included in this export before downloading.</p>
+    <p>Select the files and folders to include in this export.</p>
     <div class="file-head">
-      <div><span class="file-name">${esc(fileName)}</span></div>
-      <div class="file-meta"><span class="file-size">${formatSize(totalSize)}</span></div>
+      <label class="file-select-all"><input type="checkbox" id="exportAll" checked> Select all</label>
+      <div class="file-meta"><span class="file-size" id="exportTotal">${formatSize(rows.reduce((s, r) => s + r.size, 0))}</span></div>
     </div>
-    ${filesHtml(rows)}
-    ${summaryHtml(rows.length, 0, totalSize)}
+    ${filesHtml(rows, true)}
+    <div class="file-summary" id="exportSummary"></div>
     <div class="modal-actions">
       <button class="primary" data-act="cancel">Cancel</button>
       <button class="primary" data-act="download">Download</button>
@@ -90,14 +83,44 @@ export async function exportData() {
 
   const backdrop = $("modalBackdrop");
   backdrop.querySelector('[data-act="cancel"]').onclick = closeModal;
-  backdrop.querySelector('[data-act="download"]').onclick = () => {
+
+  const checks = [...backdrop.querySelectorAll(".file-check")];
+  const all = backdrop.querySelector("#exportAll");
+  const downloadBtn = backdrop.querySelector('[data-act="download"]');
+  const totalEl = backdrop.querySelector("#exportTotal");
+  const summaryEl = backdrop.querySelector("#exportSummary");
+
+  function update() {
+    const sel = checks.filter(c => c.checked);
+    const size = sel.reduce((s, c) => s + rows[+c.dataset.index].size, 0);
+    totalEl.textContent = formatSize(size);
+    summaryEl.textContent = `${sel.length} of ${rows.length} selected · ${formatSize(size)}`;
+    downloadBtn.disabled = sel.length === 0;
+    all.checked = sel.length === checks.length;
+    all.indeterminate = sel.length > 0 && sel.length < checks.length;
+  }
+
+  checks.forEach(c => c.onchange = update);
+  all.onchange = () => { checks.forEach(c => c.checked = all.checked); update(); };
+  update();
+
+  downloadBtn.onclick = () => {
+    const selected = checks.filter(c => c.checked).map(c => rows[+c.dataset.index].item);
+    const p = {
+      format: "notezen",
+      version: 2,
+      schemaVersion: 2,
+      exportedAt: now(),
+      items: selected
+    };
+    const b = new Blob([JSON.stringify(p, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    a.href = URL.createObjectURL(b);
     a.download = fileName;
     a.click();
     URL.revokeObjectURL(a.href);
     closeModal();
-    toast("Export complete");
+    toast(`Exported ${selected.length} item${selected.length === 1 ? "" : "s"}`);
   };
 }
 
