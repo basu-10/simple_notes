@@ -1,0 +1,37 @@
+# Wrangler's static-assets bundler ignores .gitignore; it only honors .assetsignore.
+# Everything below is excluded from the deployed asset set (repo root is the web root).
+
+# Dependencies / tooling
+node_modules/
+.wrangler/
+
+# Capacitor / Android (not part of the web app)
+android/
+www/
+capacitor.config.json
+
+# Editor / IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Secrets / env
+.env
+.env.*
+*.local
+
+# Docs / project meta (not served)
+*.md
+.gitignore
+scripts/
+
+# Lockfiles / manifests (not served)
+package.json
+package-lock.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
