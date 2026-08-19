@@ -19,6 +19,11 @@ export function path(id) {
 export function renderTree() {
   const t = $("tree");
   t.innerHTML = "";
+  function ensurePath(id) {
+    let x = state.items.find(y => y.id === id);
+    while (x) { state.expanded.add(x.id); x = x.parentId ? state.items.find(y => y.id === x.parentId) : null; }
+  }
+  if (state.folder) ensurePath(state.folder);
   function draw(parentId, depth) {
     const folders = kids(parentId).filter(x => x.type === "folder").sort((a, b) => a.name.localeCompare(b.name));
     folders.forEach(f => {
@@ -26,7 +31,8 @@ export function renderTree() {
       row.className = "tree-row " + (state.folder === f.id ? "active" : "");
       row.style.paddingLeft = (10 + depth * 15) + "px";
       const twist = document.createElement("span"); twist.className = "twisty";
-      const hasKids = kids(f.id).length > 0; const open = state.folder === f.id || !f.parentId;
+      const hasKids = kids(f.id).length > 0;
+      const open = state.expanded.has(f.id) || !f.parentId;
       twist.textContent = hasKids ? (open ? "⌄" : "›") : "";
       const color = document.createElement("span"); color.className = "folder-color";
       color.style.setProperty("--folder-color", f.color || "#777976");
@@ -35,7 +41,14 @@ export function renderTree() {
       const count = document.createElement("span"); count.className = "count";
       count.textContent = kids(f.id).filter(x => x.type === "note").length;
       row.append(twist, color, icon, name, count);
-      row.onclick = () => { state.folder = f.id; renderAll(); if (innerWidth <= 700) setMobileView("notes"); };
+      twist.onclick = (e) => {
+        e.stopPropagation();
+        if (!hasKids) return;
+        if (state.expanded.has(f.id)) state.expanded.delete(f.id);
+        else state.expanded.add(f.id);
+        renderAll();
+      };
+      row.onclick = () => { state.folder = f.id; state.expanded.add(f.id); renderAll(); if (innerWidth <= 700) setMobileView("notes"); };
       row.ondblclick = () => rename(f);
       t.appendChild(row);
       if (open) draw(f.id, depth + 1);

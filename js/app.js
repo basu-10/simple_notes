@@ -15,7 +15,6 @@ import { exportData, importData } from "./export-import.js";
 $("newNote").onclick = createNote;
 $("newFolderBtn").onclick = createFolder;
 document.querySelectorAll("#mobileNav button").forEach(b => b.onclick = () => setMobileView(b.dataset.view));
-$("newFolder").onclick = createFolder;
 $("export").onclick = exportData;
 $("import").onclick = () => $("importFile").click();
 $("importFile").onchange = e => e.target.files[0] && importData(e.target.files[0]);
