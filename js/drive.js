@@ -14,7 +14,7 @@ export function setMode(m) {
 }
 
 export function driveSetup() {
-  modal(`<h2>Connect Google Drive</h2><p>Plainnote has no backend. Drive access happens directly in your browser using Google's OAuth flow. Supply your own Web OAuth Client ID.</p><div class="field"><label>OAuth Client ID</label><input id="clientId" placeholder="…apps.googleusercontent.com"></div><div class="modal-actions"><button id="cancel">Cancel</button><button class="primary" id="connect">Connect</button></div>`);
+  modal(`<h2>Connect Google Drive</h2><p>NoteZen has no backend. Drive access happens directly in your browser using Google's OAuth flow. Supply your own Web OAuth Client ID.</p><div class="field"><label>OAuth Client ID</label><input id="clientId" placeholder="…apps.googleusercontent.com"></div><div class="modal-actions"><button id="cancel">Cancel</button><button class="primary" id="connect">Connect</button></div>`);
   $("cancel").onclick = () => { closeModal(); setMode("local"); };
   $("connect").onclick = () => connectDrive($("clientId").value.trim());
 }

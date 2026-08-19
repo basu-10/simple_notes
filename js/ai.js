@@ -64,7 +64,7 @@ export async function askAI() {
   try {
     let r = await fetch(url, {
       method: "POST",
-      headers: { "Authorization": "Bearer " + authKey, "Content-Type": "application/json", "HTTP-Referer": location.href, "X-Title": "Plainnote" },
+      headers: { "Authorization": "Bearer " + authKey, "Content-Type": "application/json", "HTTP-Referer": location.href, "X-Title": "NoteZen" },
       body: JSON.stringify({ model, messages: [{ role: "user", content: "Review this plain-text note for factual ambiguity, logical gaps, unsupported claims, and unclear terminology. Return concise findings only.\n\n" + n.content }], temperature: .2 })
     });
     let d = await r.json();

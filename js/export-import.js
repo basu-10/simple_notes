@@ -16,7 +16,7 @@ export function exportData() {
 export async function importData(file) {
   try {
     let d = JSON.parse(await file.text());
-    if (d.format !== "plainnote") throw Error("Invalid Plainnote file");
+    if (d.format !== "plainnote") throw Error("Invalid NoteZen file");
     let ids = new Set(state.items.map(x => x.id));
     for (let x of d.items) {
       if (ids.has(x.id)) x.id = uid();
