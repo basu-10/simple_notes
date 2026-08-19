@@ -1,5 +1,6 @@
-import { saveSetting, setting } from "./db.js";
+import { setting } from "./db.js";
 
+const KEY = "notezen-theme";
 const MODES = ["auto", "dark", "light"];
 const LABELS = {
   auto: "Appearance: Auto (system)",
@@ -16,6 +17,13 @@ const ICONS = {
 const root = document.documentElement;
 let media;
 let currentMode = "auto";
+
+function read() {
+  try { return localStorage.getItem(KEY); } catch { return null; }
+}
+function write(v) {
+  try { localStorage.setItem(KEY, v); } catch {}
+}
 
 function systemPrefersDark() {
   return media ? media.matches : false;
@@ -50,14 +58,24 @@ export async function initTheme() {
   media.addEventListener("change", () => {
     if (currentMode === "auto") apply(currentMode);
   });
-  const saved = await setting("theme");
+  let saved = read();
+  if (!MODES.includes(saved)) {
+    const dbSaved = await setting("theme");
+    if (MODES.includes(dbSaved)) { saved = dbSaved; write(dbSaved); }
+  }
   currentMode = MODES.includes(saved) ? saved : "auto";
   apply(currentMode);
+  window.addEventListener("storage", e => {
+    if (e.key !== KEY) return;
+    if (!MODES.includes(e.newValue)) return;
+    currentMode = e.newValue;
+    apply(currentMode);
+  });
 }
 
 export function cycleTheme() {
   const i = MODES.indexOf(currentMode);
   currentMode = MODES[(i + 1) % MODES.length];
   apply(currentMode);
-  saveSetting("theme", currentMode);
+  write(currentMode);
 }

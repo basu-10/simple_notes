@@ -166,6 +166,11 @@
     localStorage.setItem("notezen-theme", mode);
     apply(mode);
   });
+  window.addEventListener("storage", function (e) {
+    if (e.key !== "notezen-theme" || !MODES.includes(e.newValue)) return;
+    mode = e.newValue;
+    apply(mode);
+  });
   apply(mode);
 })();
 </script>
