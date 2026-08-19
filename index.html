@@ -160,8 +160,19 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .folder-color{width:9px;height:9px;border-radius:50%;flex:none;background:var(--folder-color,#777976);box-shadow:0 0 0 2px rgba(255,255,255,.55),1px 1px 3px rgba(70,70,70,.18)}
 .db-size{font-size:10px;color:#8a8b88;margin-top:3px}
 .mobile-nav{display:none}
-.field select{width:100%;height:40px;border:0;border-radius:12px;background:#e3e3e0;box-shadow:inset 2px 2px 5px #c9c9c6,inset -2px -2px 5px #f6f6f4;padding:0 12px}
-@media(max-width:700px){
+ .field select{width:100%;height:40px;border:0;border-radius:12px;background:#e3e3e0;box-shadow:inset 2px 2px 5px #c9c9c6,inset -2px -2px 5px #f6f6f4;padding:0 12px}
+ .endpoint-list{display:flex;flex-direction:column;gap:7px;margin-bottom:9px;max-height:150px;overflow:auto}
+ .endpoint-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:11px;background:#e3e3e0;box-shadow:inset 1px 1px 3px #c9c9c6,inset -1px -1px 3px #f6f6f4;font-size:11px}
+ .endpoint-item .ep-name{font-weight:600;flex:none;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .endpoint-item .ep-url{color:#8a8b88;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+ .endpoint-item .ep-del{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:#a0a19e;font-size:15px;flex:none}
+ .endpoint-item .ep-del:hover{color:#d05a5a}
+ .endpoint-add{display:grid;gap:7px}
+ .endpoint-add .row{display:flex;gap:7px}
+ .endpoint-add input{width:100%}
+ .endpoint-add .primary{height:40px;flex:none;padding:0 16px}
+ .endpoint-empty{font-size:10px;color:#9a9b98;margin-bottom:9px}
+ @media(max-width:700px){
   .app{padding:6px}
   .shell{display:block;position:relative;padding:7px;border-radius:24px;overflow:hidden}
   .top{height:58px;display:flex;gap:8px;padding:0 4px}
@@ -273,7 +284,7 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 <script>
 (()=>{"use strict";
 const DB="plainnote-v2",VER=1,$=id=>document.getElementById(id),uid=()=>crypto.randomUUID(),now=()=>new Date().toISOString();
-let db,state={items:[],selected:null,folder:null,mode:"local",driveToken:null},timer;
+ let db,state={items:[],selected:null,folder:null,mode:"local",driveToken:null},timer,endpoints=[];
 const toast=m=>{let t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(t.x);t.x=setTimeout(()=>t.classList.remove("show"),1800)};
 function openDB(){return new Promise((ok,no)=>{let r=indexedDB.open(DB,VER);r.onupgradeneeded=()=>{let d=r.result;d.createObjectStore("items",{keyPath:"id"});d.createObjectStore("settings",{keyPath:"key"})};r.onsuccess=()=>{db=r.result;ok()};r.onerror=()=>no(r.error)})}
 function store(n,m="readonly"){return db.transaction(n,m).objectStore(n)}
@@ -388,10 +399,73 @@ async function driveSync(n){let meta={name:(n.title||"Untitled note")+".txt",mim
 function exportData(){let blob=new Blob([JSON.stringify({format:"plainnote",version:1,exportedAt:now(),items:state.items},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="plainnote-export-"+now().slice(0,10)+".plainnote";a.click();URL.revokeObjectURL(a.href);toast("Export complete")}
 async function importData(file){try{let d=JSON.parse(await file.text());if(d.format!=="plainnote")throw Error("Invalid Plainnote file");let ids=new Set(state.items.map(x=>x.id));for(let x of d.items){if(ids.has(x.id))x.id=uid();state.items.push(x);await put(x)}renderAll();toast("Import complete")}catch(e){toast("Import failed")}}
 function search(q){q=q.trim().toLowerCase();let notes=q?state.items.filter(x=>x.type==="note"&&((x.title+" "+x.content).toLowerCase().includes(q))):[];let list=$("notes");if(!q)return renderNotes();list.innerHTML="";$("folderTitle").textContent="Search";$("folderCount").textContent=notes.length+" matches";notes.forEach(x=>{let r=document.createElement("div");r.className="note-card";r.innerHTML='<div class="note-title"><span>'+esc(x.title||"Untitled note")+'</span></div><div class="note-preview">'+esc(x.content.slice(0,130).replace(/\s+/g," "))+"</div>";r.onclick=()=>select(x.id);list.appendChild(r)})}
-async function settings(){let key=await setting("orKey")||"";modal(`<h2>Settings</h2><p>Local data stays in IndexedDB. OpenRouter uses BYOK and is called directly from this browser.</p><div class="field"><label>OpenRouter API key</label><input id="orKey" type="password" value="${esc(key)}" placeholder="sk-or-v1-…"></div><div class="modal-actions"><button id="cancel">Cancel</button><button class="primary" id="save">Save</button></div>`);$("cancel").onclick=closeModal;$("save").onclick=async()=>{await saveSetting("orKey",$("orKey").value.trim());closeModal();toast("Settings saved")}}
-async function askAI(){let n=state.items.find(x=>x.id===state.selected),key=await setting("orKey");if(!n)return toast("Open a note first");if(!key)return settings();toast("Reviewing note…");try{let r=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+key,"Content-Type":"application/json","HTTP-Referer":location.href,"X-Title":"Plainnote"},body:JSON.stringify({model:$("model").value,messages:[{role:"user",content:"Review this plain-text note for factual ambiguity, logical gaps, unsupported claims, and unclear terminology. Return concise findings only.\\n\\n"+n.content}],temperature:.2})});let d=await r.json();if(!r.ok)throw Error(d.error?.message||"Request failed");modal("<h2>AI Review</h2><p>"+esc(d.choices?.[0]?.message?.content||"No response").replace(/\\n/g,"<br>")+'</p><div class="modal-actions"><button class="primary" id="close">Close</button></div>');$("close").onclick=closeModal}catch(e){toast(e.message)}}
+ function renderModelOptions(){
+  const sel=$("model"),cur=sel.value,defaults=["openai/gpt-4o-mini","google/gemini-2.5-flash","anthropic/claude-3.5-haiku"];
+  sel.innerHTML="";
+  defaults.forEach(m=>{const o=document.createElement("option");o.value=m;o.textContent=m;sel.appendChild(o)});
+  endpoints.forEach((e,i)=>{const o=document.createElement("option");o.value="custom:"+i;o.textContent=e.name;sel.appendChild(o)});
+  if([...sel.options].some(o=>o.value===cur))sel.value=cur;
+ }
+ async function settings(){
+  let key=await setting("orKey")||"";
+  endpoints=await setting("endpoints")||[];
+  modal(`<h2>Settings</h2><p>Local data stays in IndexedDB. Requests are sent directly from this browser (BYOK). Add custom model endpoints to use them from the AI assistant dropdown.</p>
+  <div class="field"><label>OpenRouter API key</label><input id="orKey" type="password" value="${esc(key)}" placeholder="sk-or-v1-…"></div>
+  <div class="field"><label>Custom Model Endpoints</label>
+   <div class="endpoint-list" id="endpointList"></div>
+   <div class="endpoint-add">
+    <input id="epName" placeholder="Label (e.g. Local Llama)">
+    <div class="row"><input id="epUrl" placeholder="https://host/v1/chat/completions"><input id="epModel" placeholder="model id (optional)"></div>
+    <div class="row"><input id="epKey" type="password" placeholder="API key (optional)"><button class="primary" id="addEp">Add</button></div>
+   </div>
+  </div>
+  <div class="modal-actions"><button id="cancel">Cancel</button><button class="primary" id="save">Save</button></div>`);
+  function drawList(){
+   const list=$("endpointList");list.innerHTML="";
+   if(!endpoints.length){const e=document.createElement("div");e.className="endpoint-empty";e.textContent="No custom endpoints yet.";list.appendChild(e);return}
+   endpoints.forEach((e,i)=>{
+    const item=document.createElement("div");item.className="endpoint-item";
+    const name=document.createElement("span");name.className="ep-name";name.textContent=e.name;
+    const url=document.createElement("span");url.className="ep-url";url.textContent=e.url;
+    const del=document.createElement("button");del.className="ep-del";del.textContent="×";del.onclick=()=>{endpoints.splice(i,1);drawList()};
+    item.append(name,url,del);list.appendChild(item);
+   });
+  }
+  drawList();
+  $("addEp").onclick=()=>{
+   const name=$("epName").value.trim(),url=$("epUrl").value.trim();
+   if(!name||!url)return toast("Label and URL required");
+   endpoints.push({name,url,model:$("epModel").value.trim(),key:$("epKey").value.trim()});
+   $("epName").value="";$("epUrl").value="";$("epModel").value="";$("epKey").value="";
+   drawList();
+  };
+  $("cancel").onclick=closeModal;
+  $("save").onclick=async()=>{
+   await saveSetting("orKey",$("orKey").value.trim());
+   await saveSetting("endpoints",endpoints);
+   closeModal();renderModelOptions();toast("Settings saved");
+  };
+ }
+ async function askAI(){
+  let n=state.items.find(x=>x.id===state.selected),key=await setting("orKey");
+  if(!n)return toast("Open a note first");
+  const sel=$("model").value;
+  let url="https://openrouter.ai/api/v1/chat/completions",model=sel,authKey=key;
+  if(sel.startsWith("custom:")){
+   const ep=endpoints[+sel.slice(7)];
+   if(!ep)return toast("Selected endpoint missing");
+   url=ep.url;model=ep.model||ep.name;authKey=ep.key||key;
+   if(!authKey)return toast("API key required for this endpoint");
+  }else if(!key)return settings();
+  toast("Reviewing note…");
+  try{
+   let r=await fetch(url,{method:"POST",headers:{"Authorization":"Bearer "+authKey,"Content-Type":"application/json","HTTP-Referer":location.href,"X-Title":"Plainnote"},body:JSON.stringify({model,messages:[{role:"user",content:"Review this plain-text note for factual ambiguity, logical gaps, unsupported claims, and unclear terminology. Return concise findings only.\\n\\n"+n.content}],temperature:.2})});
+   let d=await r.json();if(!r.ok)throw Error(d.error?.message||"Request failed");
+   modal("<h2>AI Review</h2><p>"+esc(d.choices?.[0]?.message?.content||"No response").replace(/\\n/g,"<br>")+'</p><div class="modal-actions"><button class="primary" id="close">Close</button></div>');$("close").onclick=closeModal
+  }catch(e){toast(e.message)}
+ }
 $("newNote").onclick=createNote;$("newFolderBtn").onclick=createFolder;document.querySelectorAll("#mobileNav button").forEach(b=>b.onclick=()=>setMobileView(b.dataset.view));$("newFolder").onclick=createFolder;$("export").onclick=exportData;$("import").onclick=()=>$("importFile").click();$("importFile").onchange=e=>e.target.files[0]&&importData(e.target.files[0]);$("localMode").onclick=()=>setMode("local");$("driveMode").onclick=()=>setMode("drive");$("settings").onclick=settings;$("askAI").onclick=askAI;$("title").oninput=schedule;$("content").oninput=()=>{updateMeta();schedule()};$("search").oninput=e=>search(e.target.value);$("delete").onclick=async()=>{let n=state.items.find(x=>x.id===state.selected);if(!n)return;if(confirm("Delete this note?")){await del(n.id);updateDbSize();state.items=state.items.filter(x=>x.id!==n.id);state.selected=null;let next=kids(state.folder).find(x=>x.type==="note");next?select(next.id):(state.folder=state.folder,renderAll(),$("title").value="",$("content").value="")}};$("star").onclick=()=>toast("Star saved for this note");$("theme").onclick=()=>toast("Monochrome appearance is fixed");$("back").onclick=()=>history.back();$("forward").onclick=()=>history.forward();$("modalBackdrop").onclick=e=>e.target===e.currentTarget&&closeModal();document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="n"){e.preventDefault();createNote()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();$("search").focus()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveCurrent()}if(e.key==="Escape")closeModal()});
-(async()=>{await openDB();state.items=await all();state.items.filter(x=>x.type==="folder"&&!x.color).forEach(x=>x.color="#777976");if(!state.items.some(x=>x.type==="folder"&&!x.parentId)){let f={id:uid(),type:"folder",parentId:null,name:"Personal",color:"#777976",createdAt:now(),updatedAt:now()};state.items.push(f);await put(f)}state.folder=root().id;setMobileView("folders");updateDbSize();let n=state.items.find(x=>x.type==="note");n?select(n.id):await createNote();if(await setting("mode")==="drive")setMode("drive")})().catch(e=>{console.error(e);toast("Could not initialize")});
+(async()=>{await openDB();state.items=await all();state.items.filter(x=>x.type==="folder"&&!x.color).forEach(x=>x.color="#777976");if(!state.items.some(x=>x.type==="folder"&&!x.parentId)){let f={id:uid(),type:"folder",parentId:null,name:"Personal",color:"#777976",createdAt:now(),updatedAt:now()};state.items.push(f);await put(f)} state.folder=root().id;setMobileView("folders");updateDbSize();endpoints=await setting("endpoints")||[];renderModelOptions();let n=state.items.find(x=>x.type==="note");n?select(n.id):await createNote();if(await setting("mode")==="drive")setMode("drive")})().catch(e=>{console.error(e);toast("Could not initialize")});
 })();
 </script>
 </body>
