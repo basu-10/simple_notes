@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NoteZen</string>
+    <string name="title_activity_main">NoteZen</string>
+    <string name="package_name">com.notezen.app</string>
+    <string name="custom_url_scheme">com.notezen.app</string>
+</resources>

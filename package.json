@@ -1,0 +1,28 @@
+{
+  "name": "simple_notes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sw.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:www": "node scripts/build-www.mjs",
+    "sync": "npm run build:www && npx cap sync android"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/basu-10/simple_notes.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/basu-10/simple_notes/issues"
+  },
+  "homepage": "https://github.com/basu-10/simple_notes#readme",
+  "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/share": "^6.0.4"
+  }
+}
