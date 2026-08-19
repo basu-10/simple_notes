@@ -1,5 +1,16 @@
 apply plugin: 'com.android.application'
 
+// Load release signing secrets from local.properties (gitignored).
+def localProps = new Properties()
+def localPropsFile = rootProject.file('local.properties')
+if (localPropsFile.exists()) {
+    localPropsFile.withInputStream { localProps.load(it) }
+}
+def hasReleaseKey = localProps['KEYSTORE_PATH']?.trim()
+        && localProps['KEYSTORE_PASSWORD']?.trim()
+        && localProps['KEY_ALIAS']?.trim()
+        && localProps['KEY_PASSWORD']?.trim()
+
 android {
     namespace "com.notezen.app"
     compileSdk rootProject.ext.compileSdkVersion
@@ -16,10 +27,26 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
+    if (hasReleaseKey) {
+        signingConfigs {
+            release {
+                storeFile file(localProps['KEYSTORE_PATH'])
+                storePassword localProps['KEYSTORE_PASSWORD']
+                keyAlias localProps['KEY_ALIAS']
+                keyPassword localProps['KEY_PASSWORD']
+                storeType 'PKCS12'
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseKey) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

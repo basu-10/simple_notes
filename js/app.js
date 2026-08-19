@@ -12,6 +12,7 @@ import { setMode } from "./drive.js";
 import { settings, askAI } from "./ai.js";
 import { exportData, importData } from "./export-import.js";
 import { initTheme, cycleTheme } from "./theme.js";
+import { initShareIn } from "./share-in.js";
 
 $("newNote").onclick = createNote;
 $("newFolderBtn").onclick = createFolder;
@@ -80,6 +81,7 @@ function showShortcuts() {
   let n = state.items.find(x => x.type === "note");
   n ? select(n.id) : await createNote();
   if (await setting("mode") === "drive") setMode("drive");
+  initShareIn();
 })().catch(e => { console.error(e); toast("Could not initialize"); });
 
 if ("serviceWorker" in navigator) {
