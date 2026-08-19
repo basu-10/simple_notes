@@ -25,7 +25,7 @@ export async function createFolder() {
   $("create").onclick = async () => {
     let name = $("folderName").value.trim();
     if (!name) return toast("Folder name required");
-    let f = { id: uid(), type: "folder", parentId: state.folder || root()?.id, name, color: $("folderColor").value, createdAt: now(), updatedAt: now() };
+    let f = { id: uid(), type: "folder", parentId: state.folder, name, color: $("folderColor").value, createdAt: now(), updatedAt: now() };
     state.items.push(f);
     state.folder = f.id;
     await put(f);

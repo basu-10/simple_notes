@@ -79,7 +79,8 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 }
 .new-note,.new-folder{gap:8px}
 .kbd{font-size:10px;color:#777;border-radius:6px;padding:3px 6px;background:#e4e4e1;box-shadow:inset 1px 1px 2px #c8c8c5}
-.section-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#8a8b89;margin:25px 7px 9px}
+.section-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#8a8b89;margin:25px 7px 9px;cursor:pointer;border-radius:8px;align-self:flex-start;padding:2px 4px}
+.sidebar.root-selected .section-label{color:#3a3b39;background:rgba(255,255,255,.4)}
 .tree{overflow:auto;flex:1;padding-right:2px}
 .tree-row{
   min-height:37px;display:flex;align-items:center;gap:8px;border-radius:12px;padding:0 10px;color:#626462;font-size:13px;margin:2px 0;

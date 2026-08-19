@@ -63,6 +63,16 @@ export function renderTree() {
     });
   }
   draw(null, 0);
+  const sidebar = t.closest(".sidebar");
+  if (!t.dataset.bound) {
+    t.dataset.bound = "1";
+    const deselect = () => { state.folder = null; renderAll(); };
+    t.addEventListener("click", e => { if (e.target === t) deselect(); });
+    if (sidebar) sidebar.addEventListener("click", e => {
+      if (e.target === sidebar || e.target.classList?.contains("section-label")) deselect();
+    });
+  }
+  if (sidebar) sidebar.classList.toggle("root-selected", state.folder === null);
 }
 
 export function renderNotes() {
