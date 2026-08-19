@@ -7,3 +7,7 @@
 
 /sw.js
   Cache-Control: no-cache
+
+/downloads/*
+  Content-Type: application/vnd.android.package-archive
+  Cache-Control: public, max-age=86400
