@@ -6,7 +6,7 @@ import {
   updateMeta, search, root, closeModal, renderTrash, modal, cycleNote
 } from "./ui.js";
 import {
-  createNote, createFolder, schedule, saveCurrent, deleteCurrent
+  createNote, createFolder, schedule, saveCurrent, deleteCurrent, toggleFavorite
 } from "./crud.js";
 import { setMode } from "./drive.js";
 import { settings, askAI } from "./ai.js";
@@ -27,12 +27,16 @@ $("title").oninput = schedule;
 $("content").oninput = () => { updateMeta(); schedule(); };
 $("search").oninput = e => search(e.target.value);
 $("delete").onclick = deleteCurrent;
-$("star").onclick = () => toast("Star saved for this note");
+$("star").onclick = () => {
+  const n = state.items.find(x => x.id === state.selected);
+  if (!n) return toast("Select a note first");
+  toggleFavorite(n);
+};
 $("theme").onclick = () => toast("Monochrome appearance is fixed");
 $("back").onclick = () => cycleNote(-1);
 $("forward").onclick = () => cycleNote(1);
 $("modalBackdrop").onclick = e => e.target === e.currentTarget && closeModal();
-$("trashBtn").onclick = () => { state.inTrash = !state.inTrash; state.inTrash ? renderTrash() : renderAll(); };
+$("trashBtn").onclick = () => { state.inTrash = !state.inTrash; state.showFavorites = false; state.inTrash ? renderTrash() : renderAll(); };
 document.addEventListener("keydown", e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") { e.preventDefault(); e.shiftKey ? createFolder() : createNote(); }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("search").focus(); }

@@ -1,6 +1,6 @@
 import { $, esc, toast } from "./utils.js";
 import { state } from "./state.js";
-import { rename, moveNote, duplicateNote, deleteNote, deleteFolder, restoreFromTrash, purgeFromTrash, emptyTrash } from "./crud.js";
+import { rename, moveNote, duplicateNote, deleteNote, deleteFolder, restoreFromTrash, purgeFromTrash, emptyTrash, toggleFavorite } from "./crud.js";
 import { getTrash } from "./db.js";
 
 export function kids(id) {
@@ -20,6 +20,17 @@ export function path(id) {
 export function renderTree() {
   const t = $("tree");
   t.innerHTML = "";
+  const favCount = state.items.filter(x => x.type === "note" && x.favorite && !x.deletedAt).length;
+  const favRow = document.createElement("div");
+  favRow.className = "tree-row fav-row" + (state.showFavorites ? " active" : "");
+  favRow.innerHTML = `<span class="folder-color fav-star" style="--folder-color:#b89a52">★</span><span class="fav-label">Favorites</span><span class="count">${favCount}</span>`;
+  favRow.onclick = () => {
+    state.showFavorites = true;
+    state.folder = null;
+    renderAll();
+    if (innerWidth <= 700) setMobileView("notes");
+  };
+  t.appendChild(favRow);
   function ensurePath(id) {
     let x = state.items.find(y => y.id === id);
     while (x) { state.expanded.add(x.id); x = x.parentId ? state.items.find(y => y.id === x.parentId) : null; }
@@ -56,7 +67,7 @@ export function renderTree() {
         else state.expanded.add(f.id);
         renderAll();
       };
-      row.onclick = () => { state.folder = f.id; state.expanded.add(f.id); renderAll(); if (innerWidth <= 700) setMobileView("notes"); };
+      row.onclick = () => { state.folder = f.id; state.expanded.add(f.id); state.showFavorites = false; renderAll(); if (innerWidth <= 700) setMobileView("notes"); };
       row.ondblclick = () => rename(f);
       longPress(row, (cx, cy) => openMenu(cx, cy, folderMenu(f)));
       t.appendChild(row);
@@ -67,7 +78,7 @@ export function renderTree() {
   const sidebar = t.closest(".sidebar");
   if (!t.dataset.bound) {
     t.dataset.bound = "1";
-    const deselect = () => { state.folder = null; renderAll(); };
+    const deselect = () => { state.folder = null; state.showFavorites = false; renderAll(); };
     t.addEventListener("click", e => { if (e.target === t) deselect(); });
     if (sidebar) sidebar.addEventListener("click", e => {
       if (e.target === sidebar || e.target.classList?.contains("section-label")) deselect();
@@ -77,14 +88,29 @@ export function renderTree() {
 }
 
 export function renderNotes() {
-  const list = $("notes"), folderId = state.folder || root()?.id;
-  const notes = kids(folderId).filter(x => x.type === "note").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const list = $("notes");
+  let notes, title;
+  if (state.showFavorites) {
+    notes = state.items.filter(x => x.type === "note" && x.favorite && !x.deletedAt);
+    title = "Favorites";
+  } else {
+    const folderId = state.folder || root()?.id;
+    notes = kids(folderId).filter(x => x.type === "note");
+    title = state.items.find(x => x.id === folderId)?.name || "Personal";
+  }
+  notes.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0) || b.updatedAt.localeCompare(a.updatedAt));
   list.innerHTML = "";
-  const folder = state.items.find(x => x.id === folderId);
-  $("folderTitle").textContent = folder?.name || "Personal";
+  $("folderTitle").textContent = title;
   $("folderCount").textContent = notes.length + " note" + (notes.length === 1 ? "" : "s");
+  if (state.showFavorites && !notes.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "No favorites yet — tap the star on a note to add it here.";
+    list.appendChild(empty);
+    return;
+  }
   notes.forEach((x, i) => {
-    const card = document.createElement("div"); card.className = "note-card " + (x.id === state.selected ? "active" : "");
+    const card = document.createElement("div"); card.className = "note-card " + (x.id === state.selected ? "active" : "") + (x.favorite ? " is-fav" : "");
     const head = document.createElement("div"); head.className = "note-title";
     const title = document.createElement("span"); title.textContent = x.title || "Untitled note";
     const date = document.createElement("span"); date.className = "note-date";
@@ -92,6 +118,12 @@ export function renderNotes() {
     head.append(title, date);
     const preview = document.createElement("div"); preview.className = "note-preview";
     preview.textContent = (x.content || "").replace(/\s+/g, " ").slice(0, 110);
+    const star = document.createElement("button"); star.className = "card-star" + (x.favorite ? " on" : ""); star.title = x.favorite ? "Remove from Favorites" : "Add to Favorites";
+    star.textContent = x.favorite ? "★" : "☆";
+    star.onclick = (e) => {
+      e.stopPropagation();
+      toggleFavorite(x);
+    };
     const kebab = document.createElement("button"); kebab.className = "card-menu"; kebab.title = "Note actions";
     kebab.innerHTML = "&#8942;";
     kebab.onclick = (e) => {
@@ -99,7 +131,7 @@ export function renderNotes() {
       const r = kebab.getBoundingClientRect();
       openMenu(r.right - 4, r.bottom + 4, noteMenu(x));
     };
-    card.append(head, preview, kebab);
+    card.append(head, preview, star, kebab);
     card.onclick = () => select(x.id);
     card.ondblclick = () => rename(x);
     longPress(card, (cx, cy) => openMenu(cx, cy, noteMenu(x)));
@@ -153,10 +185,21 @@ export function select(id) {
   state.selected = id;
   let n = state.items.find(x => x.id === id); if (!n) return;
   state.folder = n.parentId;
+  state.showFavorites = false;
   $("title").value = n.title; $("content").value = n.content;
   $("date").textContent = new Date(n.updatedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) + "  ·  " + new Date(n.updatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  updateMeta(); renderAll();
+  updateMeta(); renderAll(); updateStar();
   if (innerWidth <= 700) setMobileView("editor");
+}
+
+export function updateStar() {
+  const el = $("star");
+  if (!el) return;
+  const n = state.items.find(x => x.id === state.selected);
+  const on = !!(n && n.favorite);
+  el.textContent = on ? "★" : "☆";
+  el.classList.toggle("on", on);
+  el.title = on ? "Remove from Favorites" : "Add to Favorites";
 }
 
 export function cycleNote(dir) {
@@ -250,6 +293,7 @@ export function longPress(el, fn) {
 
 export function search(q) {
   q = q.trim().toLowerCase();
+  state.showFavorites = false;
   let notes = q ? state.items.filter(x => x.type === "note" && ((x.title + " " + x.content).toLowerCase().includes(q))) : [];
   let list = $("notes");
   if (!q) return renderNotes();

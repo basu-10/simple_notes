@@ -91,6 +91,13 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .folder-icon{width:16px;height:16px;border:1.4px solid #777;border-radius:3px;position:relative}
 .folder-icon:before{content:"";position:absolute;width:6px;height:3px;left:1px;top:-4px;border:1.4px solid #777;border-bottom:0;border-radius:2px 2px 0 0}
 .count{margin-left:auto;font-size:10px;color:#a0a19e}
+.fav-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:12px;color:#777;font-weight:600;font-size:12px;margin-bottom:4px;cursor:pointer}
+.fav-row:hover{background:rgba(255,255,255,.38)}
+.fav-row.active{color:#202122;background:linear-gradient(145deg,#f2f2f0,#dededb);box-shadow:4px 4px 9px rgba(70,70,70,.11),-4px -4px 9px #fff}
+.fav-label{font-weight:600}
+.fav-star{display:grid;place-items:center;width:auto;height:auto;margin:0;font-size:13px;color:var(--folder-color,#b89a52);background:transparent;box-shadow:none}
+.fav-row .fav-star{display:grid;place-items:center;width:auto;height:auto;margin:0;font-size:13px;color:#b89a52;background:transparent;box-shadow:none}
+.fav-row.active .fav-star{color:#b89a52}
 .storage{
   padding:14px;margin-top:12px;border-radius:17px;
   background:linear-gradient(145deg,#ededeb,#ddddda);
@@ -107,7 +114,7 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .list-head h2{margin:0;font-size:17px;font-weight:600;letter-spacing:-.02em}.list-head small{display:block;color:#8b8c89;font-size:11px;margin-top:4px}
 .list-menu{margin-left:auto;width:32px;height:32px;border-radius:50%;display:grid;place-items:center}
 .notes{overflow:auto;padding:10px 11px}
-.note-card{padding:14px 46px 14px 12px;border-radius:17px;margin:3px 0;cursor:pointer;transition:.18s ease}
+.note-card{padding:14px 80px 14px 12px;border-radius:17px;margin:3px 0;cursor:pointer;transition:.18s ease}
 .note-card:hover{background:rgba(255,255,255,.36)}
 .note-card.active{
   background:linear-gradient(145deg,#f2f2f0,#dededb);
@@ -121,6 +128,7 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .toolbar-spacer{flex:1}.saved{font-size:11px;color:#8b8c89;display:flex;align-items:center;gap:6px}.saved-dot{width:7px;height:7px;border-radius:50%;background:#8d8e8b;box-shadow:0 0 0 3px rgba(141,142,139,.10)}
 .tool{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#777}
 .tool:hover{background:rgba(255,255,255,.45)}
+.tool.on{color:#b89a52}
 .editor{
   flex:1;overflow:auto;padding:48px clamp(30px,5vw,70px) 38px;
   background:
@@ -184,6 +192,10 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .row-menu:hover,.card-menu:hover{background:rgba(255,255,255,.5);color:#5a5b58}
 .card-menu{position:absolute;top:10px;right:10px}
 .note-card{position:relative}
+.card-star{position:absolute;top:8px;right:46px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:0;background:transparent;color:#bdbdba;font-size:16px;line-height:1;flex:none;cursor:pointer;transition:color .15s,background .15s;z-index:2}
+.card-star:hover{background:rgba(255,255,255,.5);color:#b89a52}
+.card-star.on{color:#b89a52}
+.note-card.is-fav{background:linear-gradient(145deg,#fbf7ec,#f1ebd9)}
 @media(hover:hover){.row-menu,.card-menu{opacity:0}.tree-row:hover .row-menu,.note-card:hover .card-menu{opacity:1}}
 .folder-picker{display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow:auto;margin-top:6px}
 .picker-row{display:flex;align-items:center;gap:10px;width:100%;padding:12px 13px;border-radius:12px;background:#e5e5e2;box-shadow:inset 1px 1px 3px #cbcbc8,inset -1px -1px 3px #f6f6f4;font-size:13px;color:#333;text-align:left}

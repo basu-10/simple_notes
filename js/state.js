@@ -5,6 +5,7 @@ export const state = {
   selected: null,
   folder: null,
   inTrash: false,
+  showFavorites: false,
   expanded: new Set(),
   mode: "local",
   driveToken: null,

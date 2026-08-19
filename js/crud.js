@@ -1,7 +1,7 @@
 import { $, uid, now, esc, toast } from "./utils.js";
 import { state } from "./state.js";
 import { put, del, updateDbSize, softDelete, restore, purge, getTrash } from "./db.js";
-import { select, renderAll, renderNotes, modal, closeModal, root, kids, updateMeta, openMenu } from "./ui.js";
+import { select, renderAll, renderNotes, modal, closeModal, root, kids, updateMeta, openMenu, updateStar } from "./ui.js";
 import { driveSync } from "./drive.js";
 
 export async function createNote() {
@@ -81,10 +81,14 @@ export async function saveCurrent() {
   if (state.mode === "drive" && state.driveToken) driveSync(n).catch(console.warn);
 }
 
-export async function deleteCurrent() {
-  let n = state.items.find(x => x.id === state.selected);
-  if (!n) return;
-  await deleteNote(n);
+export async function toggleFavorite(x) {
+  x.favorite = !x.favorite;
+  await put(x);
+  await updateDbSize();
+  if (x.id === state.selected) updateStar();
+  renderAll();
+  if (state.mode === "drive" && state.driveToken) driveSync(x).catch(console.warn);
+  toast(x.favorite ? "Added to Favorites" : "Removed from Favorites");
 }
 
 export async function deleteNote(x) {

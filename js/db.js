@@ -1,6 +1,6 @@
 import { $ } from "./utils.js";
 
-const DB = "plainnote-v2", VER = 4;
+const DB = "plainnote-v2", VER = 5;
 let db;
 
 export function openDB() {
@@ -13,6 +13,7 @@ export function openDB() {
         store.createIndex("by_parent", "parentId");
         store.createIndex("by_type", "type");
         store.createIndex("by_type_parent_updated", ["type", "parentId", "updatedAt"]);
+        store.createIndex("by_favorite", "favorite");
         d.createObjectStore("settings", { keyPath: "key" });
       }
       if (e.oldVersion < 2) {
@@ -21,14 +22,23 @@ export function openDB() {
         if (!store.indexNames.contains("by_parent")) store.createIndex("by_parent", "parentId");
         if (!store.indexNames.contains("by_type")) store.createIndex("by_type", "type");
         if (!store.indexNames.contains("by_type_parent_updated")) store.createIndex("by_type_parent_updated", ["type", "parentId", "updatedAt"]);
+        if (!store.indexNames.contains("by_favorite")) store.createIndex("by_favorite", "favorite");
       }
       if (e.oldVersion < 3) {
         const tx = e.target.transaction;
         const store = tx.objectStore("items");
         if (!store.indexNames.contains("by_deleted")) store.createIndex("by_deleted", "deletedAt");
+        if (!store.indexNames.contains("by_favorite")) store.createIndex("by_favorite", "favorite");
       }
       if (e.oldVersion < 4) {
-        // v4: index already created in v1, this is a no-op for existing users
+        const tx = e.target.transaction;
+        const store = tx.objectStore("items");
+        if (!store.indexNames.contains("by_favorite")) store.createIndex("by_favorite", "favorite");
+      }
+      if (e.oldVersion < 5) {
+        const tx = e.target.transaction;
+        const store = tx.objectStore("items");
+        if (!store.indexNames.contains("by_favorite")) store.createIndex("by_favorite", "favorite");
       }
     };
     r.onsuccess = () => { db = r.result; ok(db); };
@@ -98,6 +108,14 @@ export async function purge(id) {
 export async function getTrash() {
   const items = await all(true);
   return items.filter(x => x.deletedAt).sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
+}
+
+export async function getFavorites() {
+  return new Promise((ok, no) => {
+    let r = store("items").index("by_favorite").getAll(true);
+    r.onsuccess = () => ok(r.result.filter(x => !x.deletedAt));
+    r.onerror = () => no(r.error);
+  });
 }
 
 export async function getNotesByFolder(folderId, limit = 50, offset = 0) {
