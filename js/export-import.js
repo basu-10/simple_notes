@@ -1,79 +1,218 @@
-import { $, now, uid, toast } from "./utils.js";
+import { $, now, uid, toast, esc } from "./utils.js";
 import { state } from "./state.js";
 import { openDB, getDB, updateDbSize } from "./db.js";
-import { renderAll } from "./ui.js";
+import { renderAll, modal, closeModal } from "./ui.js";
 
 const REQUIRED_NOTE = ["id", "type", "parentId", "title", "content", "createdAt", "updatedAt"];
 const REQUIRED_FOLDER = ["id", "type", "parentId", "name", "color", "createdAt", "updatedAt"];
 
-function validateItem(x) {
-  if (!x || typeof x !== "object") return false;
-  if (x.type === "note") return REQUIRED_NOTE.every(k => k in x);
-  if (x.type === "folder") return REQUIRED_FOLDER.every(k => k in x);
-  return false;
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(2) + " MB";
 }
 
-export function exportData() {
+function itemName(x) {
+  if (x.type === "note") return x.title || "Untitled note";
+  if (x.type === "folder") return x.name || "Untitled folder";
+  return "Unknown item";
+}
+
+function itemSize(x) {
+  return new Blob([JSON.stringify(x)]).size;
+}
+
+function validateItem(x) {
+  if (!x || typeof x !== "object") return "Not an object";
+  if (x.type === "note") {
+    const missing = REQUIRED_NOTE.filter(k => !(k in x));
+    return missing.length ? "Missing fields: " + missing.join(", ") : null;
+  }
+  if (x.type === "folder") {
+    const missing = REQUIRED_FOLDER.filter(k => !(k in x));
+    return missing.length ? "Missing fields: " + missing.join(", ") : null;
+  }
+  return "Unknown type: " + (x.type ?? "none");
+}
+
+function filesHtml(rows) {
+  if (!rows.length) return `<div class="file-empty">No items found.</div>`;
+  return `<div class="file-list">` + rows.map(r => `
+    <div class="file-row${r.error ? " err" : ""}">
+      <div class="file-icon">${r.type === "folder" ? "📁" : "📝"}</div>
+      <div class="file-main">
+        <span class="file-name">${esc(itemName(r.item))}</span>
+        <span class="file-type">${esc(r.type)}</span>
+      </div>
+      <div class="file-meta">
+        ${r.error
+          ? `<span class="file-error">${esc(r.error)}</span>`
+          : `<span class="file-size">${formatSize(r.size)}</span>`}
+      </div>
+    </div>`).join("") + `</div>`;
+}
+
+function summaryHtml(ok, errors, totalSize) {
+  const parts = [`${ok} item${ok === 1 ? "" : "s"} ready`];
+  if (errors) parts.push(`${errors} with errors`);
+  parts.push(`· ${formatSize(totalSize)} total`);
+  return `<div class="file-summary">${esc(parts.join(" "))}</div>`;
+}
+
+export async function exportData() {
+  const items = state.items;
+  const rows = items.map(item => ({ item, type: item.type, size: itemSize(item), error: null }));
   const payload = {
     format: "notezen",
     version: 2,
     schemaVersion: 2,
     exportedAt: now(),
-    items: state.items
+    items
   };
-  let blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "notezen-export-" + now().slice(0, 10) + ".notezen";
-  a.click();
-  URL.revokeObjectURL(a.href);
-  toast("Export complete");
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const fileName = "notezen-export-" + now().slice(0, 10) + ".notezen";
+  const totalSize = blob.size;
+
+  modal(`
+    <h2>Export</h2>
+    <p>Review the files included in this export before downloading.</p>
+    <div class="file-head">
+      <div><span class="file-name">${esc(fileName)}</span></div>
+      <div class="file-meta"><span class="file-size">${formatSize(totalSize)}</span></div>
+    </div>
+    ${filesHtml(rows)}
+    ${summaryHtml(rows.length, 0, totalSize)}
+    <div class="modal-actions">
+      <button class="primary" data-act="cancel">Cancel</button>
+      <button class="primary" data-act="download">Download</button>
+    </div>
+  `);
+
+  const backdrop = $("modalBackdrop");
+  backdrop.querySelector('[data-act="cancel"]').onclick = closeModal;
+  backdrop.querySelector('[data-act="download"]').onclick = () => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    closeModal();
+    toast("Export complete");
+  };
 }
 
 export async function importData(file) {
   try {
     const text = await file.text();
-    let d = JSON.parse(text);
+    let d;
+    try {
+      d = JSON.parse(text);
+    } catch (e) {
+      openImportModal({
+        file,
+        rows: [],
+        totalSize: file.size,
+        parseError: "Could not parse file: " + e.message
+      }, null);
+      return;
+    }
+
     if (d.format !== "notezen" || !d.items || !Array.isArray(d.items)) {
-      throw new Error("Invalid NoteZen file");
+      openImportModal({
+        file,
+        rows: [],
+        totalSize: file.size,
+        parseError: "Invalid NoteZen file (missing format or items)"
+      }, null);
+      return;
     }
 
-    for (const x of d.items) {
-      if (!validateItem(x)) throw new Error("Invalid item schema");
-    }
-
-    const idMap = new Map();
-    for (const x of d.items) {
-      if (state.items.some(i => i.id === x.id)) {
-        const newId = uid();
-        idMap.set(x.id, newId);
-        x.id = newId;
-      }
-    }
-    for (const x of d.items) {
-      if (x.parentId && idMap.has(x.parentId)) {
-        x.parentId = idMap.get(x.parentId);
-      }
-    }
-
-    const db = getDB();
-    if (!db) await openDB();
-    await new Promise((ok, no) => {
-      const tx = db.transaction("items", "readwrite");
-      const store = tx.objectStore("items");
-      for (const x of d.items) {
-        store.put(x);
-      }
-      tx.oncomplete = ok;
-      tx.onerror = () => no(tx.error);
+    const rows = d.items.map(item => {
+      const error = validateItem(item);
+      return { item, type: item.type ?? "?", size: itemSize(item), error };
     });
 
-    state.items.push(...d.items);
-    await updateDbSize();
-    renderAll();
-    toast(`Imported ${d.items.length} items`);
+    openImportModal({ file, rows, totalSize: file.size }, d);
   } catch (e) {
     console.error(e);
     toast("Import failed: " + e.message);
   }
+}
+
+function openImportModal(meta, d) {
+  const okCount = meta.rows.filter(r => !r.error).length;
+  const errCount = meta.rows.filter(r => r.error).length;
+
+  let body;
+  if (meta.parseError) {
+    body = `
+      <div class="file-head">
+        <div><span class="file-name">${esc(meta.file.name)}</span></div>
+        <div class="file-meta"><span class="file-size">${formatSize(meta.totalSize)}</span></div>
+      </div>
+      <div class="file-list"><div class="file-row err"><div class="file-main"><span class="file-error">${esc(meta.parseError)}</span></div></div></div>
+    `;
+  } else {
+    body = `
+      <div class="file-head">
+        <div><span class="file-name">${esc(meta.file.name)}</span></div>
+        <div class="file-meta"><span class="file-size">${formatSize(meta.totalSize)}</span></div>
+      </div>
+      ${filesHtml(meta.rows)}
+      ${summaryHtml(okCount, errCount, meta.totalSize)}
+    `;
+  }
+
+  modal(`
+    <h2>Import</h2>
+    <p>${meta.parseError ? "This file could not be imported." : "Review the files below. Items with errors will be skipped."}</p>
+    ${body}
+    <div class="modal-actions">
+      <button class="primary" data-act="cancel">Cancel</button>
+      ${d ? `<button class="primary" data-act="confirm">Import${errCount ? " valid" : ""}</button>` : ""}
+    </div>
+  `);
+
+  const backdrop = $("modalBackdrop");
+  backdrop.querySelector('[data-act="cancel"]').onclick = closeModal;
+  if (d) {
+    backdrop.querySelector('[data-act="confirm"]').onclick = () => runImport(d, meta.rows);
+  }
+}
+
+async function runImport(d, rows) {
+  const valid = rows.filter(r => !r.error).map(r => r.item);
+
+  const idMap = new Map();
+  for (const x of valid) {
+    if (state.items.some(i => i.id === x.id)) {
+      const newId = uid();
+      idMap.set(x.id, newId);
+      x.id = newId;
+    }
+  }
+  for (const x of valid) {
+    if (x.parentId && idMap.has(x.parentId)) {
+      x.parentId = idMap.get(x.parentId);
+    }
+  }
+
+  const db = getDB();
+  if (!db) await openDB();
+  await new Promise((ok, no) => {
+    const tx = db.transaction("items", "readwrite");
+    const store = tx.objectStore("items");
+    for (const x of valid) store.put(x);
+    tx.oncomplete = ok;
+    tx.onerror = () => no(tx.error);
+  });
+
+  state.items.push(...valid);
+  await updateDbSize();
+  renderAll();
+  closeModal();
+
+  const skipped = rows.length - valid.length;
+  const msg = `Imported ${valid.length} item${valid.length === 1 ? "" : "s"}` + (skipped ? `, skipped ${skipped}` : "");
+  toast(msg);
 }
