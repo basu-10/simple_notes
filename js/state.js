@@ -4,6 +4,7 @@ export const state = {
   items: [],
   selected: null,
   folder: null,
+  inTrash: false,
   expanded: new Set(),
   mode: "local",
   driveToken: null,

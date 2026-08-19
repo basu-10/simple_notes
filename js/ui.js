@@ -1,13 +1,14 @@
 import { $, esc, toast } from "./utils.js";
 import { state } from "./state.js";
-import { rename, moveNote, duplicateNote, deleteNote, deleteFolder } from "./crud.js";
+import { rename, moveNote, duplicateNote, deleteNote, deleteFolder, restoreFromTrash, purgeFromTrash, emptyTrash } from "./crud.js";
+import { getTrash } from "./db.js";
 
 export function kids(id) {
-  return state.items.filter(x => x.parentId === id);
+  return state.items.filter(x => x.parentId === id && !x.deletedAt);
 }
 
 export function root() {
-  return state.items.find(x => x.type === "folder" && !x.parentId);
+  return state.items.find(x => x.type === "folder" && !x.parentId && !x.deletedAt);
 }
 
 export function path(id) {
@@ -108,6 +109,40 @@ export function renderNotes() {
 }
 
 export function renderAll() { renderTree(); renderNotes(); }
+
+export function renderTrash() {
+  const list = $("notes");
+  list.innerHTML = "";
+  $("folderTitle").textContent = "Trash";
+  const trash = state.items.filter(x => x.deletedAt).sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
+  $("folderCount").textContent = trash.length + " item" + (trash.length === 1 ? "" : "s");
+  if (!trash.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "Trash is empty";
+    list.appendChild(empty);
+    return;
+  }
+  trash.forEach((x, i) => {
+    const card = document.createElement("div"); card.className = "note-card trash-card";
+    const head = document.createElement("div"); head.className = "note-title";
+    const title = document.createElement("span"); title.textContent = (x.type === "folder" ? "📁 " : "") + (x.title || x.name || "Untitled");
+    const date = document.createElement("span"); date.className = "note-date";
+    date.textContent = "Deleted " + new Date(x.deletedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    head.append(title, date);
+    const preview = document.createElement("div"); preview.className = "note-preview";
+    preview.textContent = x.type === "note" ? (x.content || "").replace(/\s+/g, " ").slice(0, 110) : `${kids(x.id).length} items`;
+    const actions = document.createElement("div"); actions.className = "trash-actions";
+    const restoreBtn = document.createElement("button"); restoreBtn.className = "raised"; restoreBtn.textContent = "Restore";
+    restoreBtn.onclick = (e) => { e.stopPropagation(); restoreFromTrash(x.id); };
+    const purgeBtn = document.createElement("button"); purgeBtn.className = "raised danger"; purgeBtn.textContent = "Delete forever";
+    purgeBtn.onclick = (e) => { e.stopPropagation(); purgeFromTrash(x.id); };
+    actions.append(restoreBtn, purgeBtn);
+    card.append(head, preview, actions);
+    list.appendChild(card);
+    if (i < trash.length - 1) { const d = document.createElement("div"); d.className = "note-divider"; list.appendChild(d); }
+  });
+}
 
 export function setMobileView(view) {
   document.querySelector(".shell").dataset.mobileView = view;

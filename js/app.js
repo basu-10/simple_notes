@@ -3,7 +3,7 @@ import { state } from "./state.js";
 import { openDB, all, setting, put, updateDbSize } from "./db.js";
 import {
   select, renderAll, renderModelOptions, renderAI, setMobileView,
-  updateMeta, search, root, closeModal
+  updateMeta, search, root, closeModal, renderTrash, modal
 } from "./ui.js";
 import {
   createNote, createFolder, schedule, saveCurrent, deleteCurrent
@@ -32,12 +32,28 @@ $("theme").onclick = () => toast("Monochrome appearance is fixed");
 $("back").onclick = () => history.back();
 $("forward").onclick = () => history.forward();
 $("modalBackdrop").onclick = e => e.target === e.currentTarget && closeModal();
+$("trashBtn").onclick = () => { state.inTrash = !state.inTrash; state.inTrash ? renderTrash() : renderAll(); };
 document.addEventListener("keydown", e => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") { e.preventDefault(); createNote(); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") { e.preventDefault(); e.shiftKey ? createFolder() : createNote(); }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("search").focus(); }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); saveCurrent(); }
-  if (e.key === "Escape") closeModal();
+  if ((e.ctrlKey || e.metaKey) && e.key === "/") { e.preventDefault(); showShortcuts(); }
+  if (e.key === "Escape") { closeModal(); if (state.inTrash) { state.inTrash = false; renderAll(); } }
 });
+
+function showShortcuts() {
+  modal(`<h2>Keyboard Shortcuts</h2>
+  <table class="shortcuts">
+    <tr><td>⌘ N</td><td>New note</td></tr>
+    <tr><td>⌘ ⇧ N</td><td>New folder</td></tr>
+    <tr><td>⌘ K</td><td>Focus search</td></tr>
+    <tr><td>⌘ S</td><td>Save note</td></tr>
+    <tr><td>⌘ /</td><td>Show this help</td></tr>
+    <tr><td>Esc</td><td>Close dialog / Exit trash</td></tr>
+  </table>
+  <div class="modal-actions"><button class="primary" id="close">Close</button></div>`);
+  $("close").onclick = closeModal;
+}
 
 (async () => {
   await openDB();
@@ -61,5 +77,23 @@ document.addEventListener("keydown", e => {
 })().catch(e => { console.error(e); toast("Could not initialize"); });
 
 if ("serviceWorker" in navigator) {
-  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(err => console.warn("SW registration failed", err)));
+  let reg;
+  addEventListener("load", async () => {
+    reg = await navigator.serviceWorker.register("sw.js").catch(err => console.warn("SW registration failed", err));
+    if (!reg) return;
+    reg.addEventListener("updatefound", () => {
+      const newWorker = reg.installing;
+      newWorker.addEventListener("statechange", () => {
+        if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+          toast("Update available — refresh to apply", 10000);
+        }
+      });
+    });
+    // Check for updates every 30 min
+    setInterval(() => reg.update(), 30 * 60 * 1000);
+  });
+  // Listen for controller change (update applied)
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    window.location.reload();
+  });
 }

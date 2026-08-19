@@ -1,7 +1,7 @@
 import { $, uid, now, esc, toast } from "./utils.js";
 import { state } from "./state.js";
-import { put, del, updateDbSize } from "./db.js";
-import { select, renderAll, renderNotes, modal, closeModal, root, kids, updateMeta } from "./ui.js";
+import { put, del, updateDbSize, softDelete, restore, purge, getTrash } from "./db.js";
+import { select, renderAll, renderNotes, modal, closeModal, root, kids, updateMeta, openMenu } from "./ui.js";
 import { driveSync } from "./drive.js";
 
 export async function createNote() {
@@ -88,34 +88,66 @@ export async function deleteCurrent() {
 }
 
 export async function deleteNote(x) {
-  if (!confirm("Delete this note?")) return;
-  await del(x.id);
+  if (!confirm("Move note to Trash?")) return;
+  await softDelete(x.id);
   await updateDbSize();
-  state.items = state.items.filter(i => i.id !== x.id);
+  // Update in-memory item instead of removing
+  const idx = state.items.findIndex(i => i.id === x.id);
+  if (idx >= 0) state.items[idx].deletedAt = new Date().toISOString();
   if (state.selected === x.id) {
     state.selected = null;
-    let next = kids(state.folder).find(i => i.type === "note");
+    let next = kids(state.folder).find(i => i.type === "note" && !i.deletedAt);
     next ? select(next.id) : (state.folder = state.folder, renderAll(), $("title").value = "", $("content").value = "");
   } else {
     renderAll();
   }
-  toast("Note deleted");
+  toast("Note moved to Trash");
 }
 
 export async function deleteFolder(f) {
   let children = kids(f.id);
   let msg = children.length
-    ? `Delete "${f.name}" and move its ${children.length} item(s) to the parent folder?`
-    : `Delete folder "${f.name}"?`;
+    ? `Move "${f.name}" and its ${children.length} item(s) to Trash?`
+    : `Move folder "${f.name}" to Trash?`;
   if (!confirm(msg)) return;
-  let parentId = f.parentId ?? null;
-  for (let c of children) { c.parentId = parentId; c.updatedAt = now(); await put(c); }
-  await del(f.id);
+  await softDelete(f.id);
+  for (let c of children) { await softDelete(c.id); }
   await updateDbSize();
-  state.items = state.items.filter(i => i.id !== f.id);
-  if (state.folder === f.id) state.folder = parentId;
+  // Update in-memory items instead of removing
+  const fIdx = state.items.findIndex(i => i.id === f.id);
+  if (fIdx >= 0) state.items[fIdx].deletedAt = new Date().toISOString();
+  for (let c of children) {
+    const cIdx = state.items.findIndex(i => i.id === c.id);
+    if (cIdx >= 0) state.items[cIdx].deletedAt = new Date().toISOString();
+  }
+  if (state.folder === f.id) state.folder = f.parentId ?? null;
   renderAll();
-  toast("Folder deleted");
+  toast("Folder moved to Trash");
+}
+
+export async function restoreFromTrash(id) {
+  await restore(id);
+  await updateDbSize();
+  renderAll();
+  toast("Restored from Trash");
+}
+
+export async function purgeFromTrash(id) {
+  if (!confirm("Permanently delete?")) return;
+  await purge(id);
+  await updateDbSize();
+  renderAll();
+  toast("Permanently deleted");
+}
+
+export async function emptyTrash() {
+  const trash = await getTrash();
+  if (!trash.length) return toast("Trash is empty");
+  if (!confirm(`Permanently delete ${trash.length} item(s)?`)) return;
+  for (const x of trash) await purge(x.id);
+  await updateDbSize();
+  renderAll();
+  toast("Trash emptied");
 }
 
 export async function duplicateNote(x) {

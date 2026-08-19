@@ -1,4 +1,4 @@
-const CACHE = "notezen-v1";
+const CACHE = "notezen-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -32,14 +32,49 @@ self.addEventListener("activate", e => {
 
 self.addEventListener("fetch", e => {
   const req = e.request;
-  if (req.method !== "GET") return;
-  e.respondWith((async () => {
-    const cache = await caches.open(CACHE);
-    const cached = await cache.match(req, { ignoreSearch: true });
-    const network = fetch(req).then(res => {
-      if (res && res.status === 200 && res.type === "basic") cache.put(req, res.clone());
-      return res;
-    }).catch(() => cached);
-    return cached || network;
-  })());
+  const url = new URL(req.url);
+
+  // Network-first for IndexedDB/Drive API calls
+  if (url.pathname.includes("/api/") || url.pathname.includes("googleapis.com")) {
+    e.respondWith(networkFirst(req));
+    return;
+  }
+
+  // Stale-while-revalidate for app assets
+  if (req.method === "GET") {
+    e.respondWith(staleWhileRevalidate(req));
+  }
+});
+
+async function networkFirst(req) {
+  try {
+    const res = await fetch(req);
+    if (res.ok) {
+      const cache = await caches.open(CACHE);
+      cache.put(req, res.clone());
+    }
+    return res;
+  } catch {
+    const cached = await caches.match(req);
+    return cached || new Response("Offline", { status: 503 });
+  }
+}
+
+async function staleWhileRevalidate(req) {
+  const cache = await caches.open(CACHE);
+  const cached = await cache.match(req);
+
+  const network = fetch(req).then(async res => {
+    if (res && res.status === 200 && res.type === "basic") {
+      cache.put(req, res.clone());
+    }
+    return res;
+  }).catch(() => cached);
+
+  return cached || network;
+}
+
+self.addEventListener("message", e => {
+  if (e.data === "skipWaiting") self.skipWaiting();
+  if (e.data === "getVersion") e.ports[0].postMessage({ version: CACHE });
 });
