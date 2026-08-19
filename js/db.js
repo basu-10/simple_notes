@@ -1,20 +1,32 @@
 import { $ } from "./utils.js";
 
-const DB = "plainnote-v2", VER = 1;
+const DB = "plainnote-v2", VER = 2;
 let db;
 
 export function openDB() {
   return new Promise((ok, no) => {
     let r = indexedDB.open(DB, VER);
-    r.onupgradeneeded = () => {
+    r.onupgradeneeded = (e) => {
       let d = r.result;
-      d.createObjectStore("items", { keyPath: "id" });
-      d.createObjectStore("settings", { keyPath: "key" });
+      if (e.oldVersion < 1) {
+        const store = d.createObjectStore("items", { keyPath: "id" });
+        store.createIndex("by_parent", "parentId");
+        store.createIndex("by_type", "type");
+        d.createObjectStore("settings", { keyPath: "key" });
+      }
+      if (e.oldVersion < 2) {
+        const tx = e.target.transaction;
+        const store = tx.objectStore("items");
+        if (!store.indexNames.contains("by_parent")) store.createIndex("by_parent", "parentId");
+        if (!store.indexNames.contains("by_type")) store.createIndex("by_type", "type");
+      }
     };
-    r.onsuccess = () => { db = r.result; ok(); };
+    r.onsuccess = () => { db = r.result; ok(db); };
     r.onerror = () => no(r.error);
   });
 }
+
+export function getDB() { return db; }
 
 function store(n, m = "readonly") {
   return db.transaction(n, m).objectStore(n);
