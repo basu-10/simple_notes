@@ -3,7 +3,7 @@ import { state } from "./state.js";
 import { openDB, all, setting, put, updateDbSize } from "./db.js";
 import {
   select, renderAll, renderModelOptions, renderAI, setMobileView,
-  updateMeta, search, root, closeModal, renderTrash, modal
+  updateMeta, search, root, closeModal, renderTrash, modal, cycleNote
 } from "./ui.js";
 import {
   createNote, createFolder, schedule, saveCurrent, deleteCurrent
@@ -29,8 +29,8 @@ $("search").oninput = e => search(e.target.value);
 $("delete").onclick = deleteCurrent;
 $("star").onclick = () => toast("Star saved for this note");
 $("theme").onclick = () => toast("Monochrome appearance is fixed");
-$("back").onclick = () => history.back();
-$("forward").onclick = () => history.forward();
+$("back").onclick = () => cycleNote(-1);
+$("forward").onclick = () => cycleNote(1);
 $("modalBackdrop").onclick = e => e.target === e.currentTarget && closeModal();
 $("trashBtn").onclick = () => { state.inTrash = !state.inTrash; state.inTrash ? renderTrash() : renderAll(); };
 document.addEventListener("keydown", e => {

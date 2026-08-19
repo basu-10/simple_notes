@@ -159,6 +159,16 @@ export function select(id) {
   if (innerWidth <= 700) setMobileView("editor");
 }
 
+export function cycleNote(dir) {
+  const folderId = state.folder || root()?.id;
+  const notes = kids(folderId).filter(x => x.type === "note").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  if (!notes.length) return;
+  let i = notes.findIndex(x => x.id === state.selected);
+  let n = (i === -1 ? (dir > 0 ? -1 : 0) : i) + dir;
+  n = (n + notes.length) % notes.length;
+  select(notes[n].id);
+}
+
 export function updateMeta() {
   $("meta").textContent = $("content").value.length.toLocaleString() + " characters";
 }
