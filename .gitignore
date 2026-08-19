@@ -1,0 +1,19 @@
+# ── Dependencies (never commit) ──
+node_modules/
+
+# ── Capacitor generated web assets ──
+# The repo ROOT holds the canonical web source (app.html, css/, js/, …).
+# www/ is regenerated from it via: npm run build:www
+www/
+
+# ── Android / Gradle build artifacts ──
+android/.gradle/
+android/**/build/
+android/local.properties
+android/captures/
+*.keystore
+*.jks
+
+# ── OS / editor noise ──
+.DS_Store
+*.log
