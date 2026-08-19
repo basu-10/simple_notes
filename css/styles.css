@@ -214,7 +214,7 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 }
 .storage-top{display:flex;justify-content:space-between;font-size:12px}.storage-top span:last-child{color:var(--faint)}
 .storage-sub{font-size:10px;color:var(--muted);margin-top:6px}
-.bar{height:5px;border-radius:4px;background:var(--bar-bg);box-shadow:inset 1px 1px 2px var(--inset-line);margin-top:10px;overflow:hidden}.bar i{display:block;width:18%;height:100%;background:var(--bar-fill);border-radius:4px}
+.bar{height:5px;border-radius:4px;background:var(--bar-bg);box-shadow:inset 1px 1px 2px var(--inset-line);margin-top:10px;overflow:hidden}.bar i{display:block;width:0;height:100%;background:var(--bar-fill);border-radius:4px;transition:width .4s ease}
 .actions{display:flex;gap:10px;margin-top:12px}.actions button{flex:1;height:42px;border-radius:20px;font-size:11px}
 .list-actions{margin-left:auto;display:flex;gap:10px}
 .list-actions .new-note,.list-actions .new-folder{flex:0 0 auto}

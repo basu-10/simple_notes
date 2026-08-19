@@ -188,7 +188,9 @@ async function storageBytes() {
 
 export async function updateDbSize() {
   const el = $("dbSize");
+  const bar = document.querySelector(".bar i");
   if (!el) return;
+  const setBar = pct => { if (bar) bar.style.width = `${Math.max(0, Math.min(100, pct))}%`; };
   const fmt = v => v < 1024 ? `${v} B`
     : v < 1048576 ? `${(v / 1024).toFixed(1)} KB`
     : v < 1073741824 ? `${(v / 1048576).toFixed(1)} MB`
@@ -200,14 +202,18 @@ export async function updateDbSize() {
       const e = await withTimeout(navigator.storage.estimate(), 3000);
       const n = e.usage || 0, q = e.quota || 0;
       el.textContent = q ? `${fmt(n)} used · ${fmt(q)} quota` : `${fmt(n)} used`;
+      if (q) setBar(q ? (n / q) * 100 : 0);
       return;
     }
     throw new Error("unsupported");
   } catch {
     try {
-      el.textContent = `${fmt(await storageBytes())} used`;
+      const n = await storageBytes();
+      el.textContent = `${fmt(n)} used`;
+      if (bar) bar.style.width = "0%";
     } catch {
       el.textContent = "Size unavailable";
+      if (bar) bar.style.width = "0%";
     }
   }
 }
