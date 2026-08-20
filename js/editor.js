@@ -29,6 +29,8 @@ function edConfig() {
     filebrowserUploadUrl: "about:blank#disabled",
     height: 480,
     autoGrow_onStartup: false,
+    versionCheck: false,
+    contentsCss: ["js/vendor/ckeditor/contents.css", "css/editor-contents.css"],
     // Notes are user-authored and local-only, so we keep ACF off. This lets
     // <img data-asset-id> (no inline src until we inject a session blob: URL)
     // survive parsing instead of being dropped by CKEditor's required-src rule.
@@ -88,8 +90,25 @@ async function insertImageFiles(fileList) {
   }
 }
 
-// Capture pasted / dropped image files ourselves so no base64 placeholder is
-// embedded by CKEditor. Runs at high priority so it precedes the clipboard plugin.
+// Keep the editor iframe's document in sync with the app theme so the editable
+// area (which lives in an isolated iframe) picks up light/dark like the rest.
+function bindThemeSync() {
+  if (!editor || !editor.document) return;
+  const doc = editor.document.$;
+  if (!doc || !doc.documentElement) return;
+  const apply = () => {
+    const t = document.documentElement.getAttribute("data-theme");
+    if (t) doc.documentElement.setAttribute("data-theme", t);
+    else doc.documentElement.removeAttribute("data-theme");
+  };
+  apply();
+  if (typeof MutationObserver !== "undefined") {
+    new MutationObserver(apply).observe(document.documentElement, {
+      attributes: true, attributeFilter: ["data-theme"]
+    });
+  }
+}
+
 function bindCapture() {
   const tryCapture = evt => {
     const data = evt.data;
@@ -138,7 +157,7 @@ export async function initEditor() {
   editor = window.CKEDITOR.replace("content", edConfig());
   await new Promise(res => {
     const done = () => { ta.dataset.ckReady = "1"; res(); };
-    editor.on("instanceReady", () => { bindCapture(); done(); });
+    editor.on("instanceReady", () => { bindCapture(); bindThemeSync(); done(); });
     editor.on("error", done);
     // Failsafe if instanceReady never fires.
     setTimeout(done, 4000);
