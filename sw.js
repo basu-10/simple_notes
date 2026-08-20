@@ -1,4 +1,4 @@
-const CACHE = "notezen-v6";
+const CACHE = "notezen-v7";
 const ASSETS = [
   "./",
   "./index.html",
