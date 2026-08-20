@@ -190,7 +190,7 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .new-note,.new-folder{gap:8px}
 .kbd{font-size:10px;color:var(--muted);border-radius:6px;padding:3px 6px;background:var(--kbd);box-shadow:inset 1px 1px 2px var(--inset-line)}
 .section-head{display:flex;align-items:center;gap:10px;margin:25px 7px 9px}
-.section-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-radius:8px;align-self:flex-start;padding:2px 4px;margin:0}
+.section-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-radius:8px;padding:2px 4px;margin:0}
 .new-folder-btn{width:32px;height:32px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;color:var(--icon)}
 .new-folder-btn svg{width:15px;height:15px}
 .sidebar.root-selected .section-label{color:var(--text);background:var(--fill-row)}

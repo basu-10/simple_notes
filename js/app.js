@@ -16,6 +16,24 @@ import { initShareIn } from "./share-in.js";
 $("newNote").onclick = createNote;
 $("newFolderBtn").onclick = createFolder;
 document.querySelectorAll("#mobileNav button").forEach(b => b.onclick = () => setMobileView(b.dataset.view));
+
+const SWIPE_VIEWS = ["folders", "notes", "editor"];
+let swipeX = 0, swipeY = 0, swipeT = 0;
+const shellEl = document.querySelector(".shell");
+shellEl.addEventListener("touchstart", e => {
+  const t = e.changedTouches[0];
+  swipeX = t.clientX; swipeY = t.clientY; swipeT = Date.now();
+}, { passive: true });
+shellEl.addEventListener("touchend", e => {
+  if (innerWidth > 700) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - swipeX, dy = t.clientY - swipeY;
+  if (Date.now() - swipeT > 700) return;
+  if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+  const cur = SWIPE_VIEWS.indexOf(shellEl.dataset.mobileView || "folders");
+  const next = dx < 0 ? Math.min(SWIPE_VIEWS.length - 1, cur + 1) : Math.max(0, cur - 1);
+  if (next !== cur) setMobileView(SWIPE_VIEWS[next]);
+}, { passive: true });
 $("export").onclick = exportData;
 $("import").onclick = () => $("importFile").click();
 $("importFile").onchange = e => e.target.files[0] && importData(e.target.files[0]);
