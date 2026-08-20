@@ -163,14 +163,6 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offs
 .mock-card b{font-size:13.5px;font-weight:600}
 .mock-card small{font-size:10.5px;color:var(--muted)}
 .mock-card.fav{background:var(--fav-bg)}
-.mock-ai{
-  display:flex;align-items:center;gap:12px;margin-top:16px;padding:12px 14px;border-radius:18px;
-  background:linear-gradient(145deg,var(--gs),var(--ge));border:1px solid var(--neu-border);
-  box-shadow:6px 6px 14px var(--neu-lo),-6px -6px 14px var(--neu-hi),inset 1px 1px 0 var(--neu-inset);
-}
-.mock-ai .ai-mark{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,var(--gs),var(--ge));box-shadow:3px 3px 7px var(--logo-lo),-3px -3px 7px var(--neu-hi);color:var(--accent);font-size:16px;flex:none}
-.mock-ai b{font-size:12.5px;font-weight:600;display:block}
-.mock-ai small{font-size:10px;color:var(--muted)}
 
 .features{
   position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:30px 28px 60px;

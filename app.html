@@ -21,7 +21,6 @@
   <div class="side-head">
     <a class="brand" href="index.html" title="NoteZen — home" aria-label="NoteZen home"><div class="logo"></div><span>NoteZen</span></a>
     <div class="side-tools">
-      <button class="icon-btn" id="settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19 15.2a2 2 0 0 0 .4 2.2l.1.1-2 2-.1-.1a2 2 0 0 0-2.2-.4 2 2 0 0 0-1.2 1.8V21h-3v-.2a2 2 0 0 0-1.2-1.8 2 2 0 0 0-2.2.4l-.1.1-2-2 .1-.1a2 2 0 0 0 .4-2.2A2 2 0 0 0 6.2 14H6v-3h.2a2 2 0 0 0 1.8-1.2 2 2 0 0 0-.4-2.2l-.1-.1 2-2 .1.1a2 2 0 0 0 2.2.4A2 2 0 0 0 13 4.2V4h3v.2a2 2 0 0 0 1.2 1.8 2 2 0 0 0 2.2-.4l.1-.1 2 2-.1.1a2 2 0 0 0-.4 2.2A2 2 0 0 0 22 11h.2v3H22a2 2 0 0 0-1.8 1.2z"/></svg></button>
       <button class="icon-btn" id="theme" title="Appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
     </div>
   </div>
@@ -58,17 +57,6 @@
       <textarea id="content" class="content" placeholder="Start writing…"></textarea>
       <div class="meta" id="meta">0 characters</div>
     </div>
-  </div>
-  <div class="ai" id="aiPanel">
-    <div class="ai-mark">✦</div>
-    <div class="ai-copy"><div class="ai-title">AI Assistant <small style="color:#9a9b98;font-size:8px"> BETA</small></div><p>Review, summarize, or ask anything about this note.</p></div>
-    <div class="ai-setup" id="aiSetup">
-      <span class="ai-setup-label">Not set up</span>
-      <button class="raised" id="aiSetupBtn">Set up</button>
-    </div>
-    <select id="provider" hidden></select>
-    <select id="model" hidden><option>openai/gpt-4o-mini</option><option>google/gemini-2.5-flash</option><option>anthropic/claude-3.5-haiku</option></select>
-    <button class="raised" id="askAI" hidden>✦ Ask AI</button>
   </div>
 </section>
 <nav class="mobile-nav" id="mobileNav">

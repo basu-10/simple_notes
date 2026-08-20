@@ -9,6 +9,5 @@ export const state = {
   expanded: new Set(),
   mode: "local",
   driveToken: null,
-  providers: [],
   timer: null
 };

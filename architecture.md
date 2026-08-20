@@ -12,7 +12,7 @@ build framework** (no React/Vite/TS). The same web UI is shipped two ways:
 2. As an **Android app** via **Capacitor** (`@capacitor/android`).
 
 There is **no application backend**. All persistence is client-side
-(IndexedDB + localStorage). External integrations (Google Drive, AI) are
+(IndexedDB + localStorage). External integrations (Google Drive) are
 **BYOK** and talk directly from the browser to the provider.
 
 ## 2. Tech Stack
@@ -24,8 +24,7 @@ There is **no application backend**. All persistence is client-side
 - Android: Capacitor 6 (`@capacitor/core`, `@capacitor/android`,
   `@capacitor/cli`, `@capacitor/share`).
 - Hosting: Cloudflare Pages (uses `_headers` convention).
-- External APIs: Google Identity Services (OAuth) + Google Drive API;
-  OpenRouter / custom OpenAI-compatible chat completions.
+- External APIs: Google Identity Services (OAuth) + Google Drive API.
 
 ## 3. Repository Layout
 - `app.html` — the application shell (loaded after landing page).
@@ -49,10 +48,9 @@ There is **no application backend**. All persistence is client-side
 | `app.js` | Entry point. Opens DB, inits theme, wires all UI event handlers, registers the service worker, bootstraps first-run state. |
 | `state.js` | Single in-memory app state object (selected note, current folder, mode, tokens, endpoints, etc.). |
 | `db.js` | IndexedDB wrapper. Object stores: `items` (notes/folders) and `settings` (key/value). Provides CRUD, queries by index, soft-delete/restore/purge, storage-size estimate. |
-| `ui.js` | Rendering & DOM: folder tree, note list, editor, modals, toasts, AI panel, mobile view switching, model dropdown. |
+| `ui.js` | Rendering & DOM: folder tree, note list, editor, modals, toasts, mobile view switching. |
 | `crud.js` | Create/update/delete logic for notes & folders, autosave scheduling, favorite toggle. |
 | `theme.js` | Appearance logic: Auto/Dark/Light cycle, system preference listener, applies `data-theme` on `<html>`, persists to localStorage (with IndexedDB fallback). |
-| `ai.js` | Settings modal (provider presets + "Ask AI" review call). `loadProviders()` migrates legacy `orKey`/`endpoints` settings into the `providers` array. |
 | `drive.js` | Google Drive BYOK OAuth connect, load notes from Drive, sync note to Drive as plain-text file. |
 | `export-import.js` | Export and import of notes in portable formats. |
 | `utils.js` | Helpers: DOM `$`, `uid`, `now`, `esc`, `toast`, etc. |
@@ -66,7 +64,7 @@ Database name/version are defined in `db.js`.
   - Indexes: by_parent, by_type, by_type_parent_updated, by_favorite, by_deleted.
   - Deletion is **soft** (sets `deletedAt`); trash view filters on it.
 - **Store `settings`** (keyPath `key`): arbitrary key/value. Known keys:
-   `theme`, `mode`, `providers` (AI provider presets: `{id, name, type:"openrouter"|"lmstudio", key, models[]}`). Legacy `orKey`/`endpoints` keys are migrated into `providers` by `loadProviders()`.
+   `theme`, `mode`.
 
 ### Persistence split
 - **Theme preference**: primarily `localStorage` (key `notezen-theme`);
@@ -88,15 +86,10 @@ Database name/version are defined in `db.js`.
 ## 6. Sync & External Integrations (BYOK, no backend)
 - **Google Drive**: User supplies their own OAuth Web Client ID. Using Google
   Identity Services, the app requests a token client-side and reads/writes
-  notes as `text/plain` files tagged with a custom app property. All traffic is
-  browser → Google directly.
-- **AI**: User configures **provider presets** (OpenRouter with a required key, or
-  LM Studio / local with a fixed `localhost:1234` endpoint and no key). Each
-  preset lists one or more **model ids**. "Ask AI" reads the selected provider +
-  model from the editor dropdowns and POSTs the current note text directly to the
-  provider's chat-completions endpoint. Responses shown in a modal.
+   notes as `text/plain` files tagged with a custom app property. All traffic is
+   browser → Google directly.
 - **Security posture**: No vendor server sees user data. Keys/tokens live only
-  in the browser (IndexedDB/localStorage). This is a deliberate privacy design.
+   in the browser (IndexedDB/localStorage). This is a deliberate privacy design.
 
 ## 7. Deployment & Build
 - **Web (Cloudflare Pages)**: deploy the `www/` output (or source assets).
@@ -122,7 +115,7 @@ Database name/version are defined in `db.js`.
   → `js/state.js` (shared state) → `js/db.js` (data) → `js/ui.js` +
   `js/crud.js` (rendering/actions).
 - Theming: `js/theme.js` + `css/styles.css` theme blocks.
-- Integrations: `js/drive.js`, `js/ai.js`.
+- Integrations: `js/drive.js`.
 - Packaging/deploy: `capacitor.config.json`, `sw.js`, `_headers`,
   `manifest.webmanifest`, `www/`.
 
@@ -134,4 +127,3 @@ Database name/version are defined in `db.js`.
 - `app.html` lacks the inline theme bootstrap that `index.html` has (possible
   first-paint flash / FOUC on the app page).
 - Drive sync is manual/per-note and user-credentialed, not continuous.
-- AI UI is BETA and currently implements a single "review" call.

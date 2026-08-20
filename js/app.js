@@ -2,14 +2,13 @@ import { $, uid, now, toast } from "./utils.js";
 import { state } from "./state.js";
 import { openDB, all, setting, put, updateDbSize } from "./db.js";
 import {
-  select, renderAll, renderModelOptions, renderProviderOptions, renderAI, setMobileView,
+  select, renderAll, setMobileView,
   updateMeta, search, root, closeModal, renderTrash, modal, cycleNote
 } from "./ui.js";
 import {
   createNote, createFolder, schedule, saveCurrent, deleteNote, toggleFavorite
 } from "./crud.js";
 import { setMode } from "./drive.js";
-import { settings, askAI, loadProviders } from "./ai.js";
 import { exportData, importData } from "./export-import.js";
 import { initTheme, cycleTheme } from "./theme.js";
 import { initShareIn } from "./share-in.js";
@@ -22,9 +21,6 @@ $("import").onclick = () => $("importFile").click();
 $("importFile").onchange = e => e.target.files[0] && importData(e.target.files[0]);
 $("localMode").onclick = () => setMode("local");
 $("driveMode").onclick = () => setMode("drive");
-$("settings").onclick = settings;
-$("askAI").onclick = askAI;
-$("aiSetupBtn").onclick = settings;
 $("title").oninput = schedule;
 $("content").oninput = () => { updateMeta(); schedule(); };
 $("search").oninput = e => search(e.target.value);
@@ -96,10 +92,6 @@ function showShortcuts() {
   state.folder = root().id;
   setMobileView("folders");
   updateDbSize();
-  state.providers = await loadProviders();
-  renderProviderOptions();
-  renderAI();
-  if ($("provider")) $("provider").onchange = renderModelOptions;
   let n = state.items.find(x => x.type === "note");
   n ? select(n.id) : await createNote();
   if (await setting("mode") === "drive") setMode("drive");

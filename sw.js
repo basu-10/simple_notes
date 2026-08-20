@@ -12,7 +12,6 @@ const ASSETS = [
   "./js/db.js",
   "./js/ui.js",
   "./js/crud.js",
-  "./js/ai.js",
   "./js/drive.js",
   "./js/export-import.js"
 ];

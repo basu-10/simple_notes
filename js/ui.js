@@ -308,36 +308,4 @@ export function search(q) {
   });
 }
 
-export function renderProviderOptions() {
-  const sel = $("provider");
-  if (!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = "";
-  state.providers.forEach(p => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.name; sel.appendChild(o); });
-  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
-  renderModelOptions();
-}
 
-export function renderModelOptions() {
-  const psel = $("provider"), sel = $("model");
-  if (!psel || !sel) return;
-  const p = state.providers.find(p => p.id === psel.value);
-  const cur = sel.value;
-  sel.innerHTML = "";
-  if (p) p.models.forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; sel.appendChild(o); });
-  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
-}
-
-export function aiConfigured() {
-  return state.providers.length > 0;
-}
-
-export function renderAI() {
-  const on = aiConfigured();
-  const el = (id) => $(id);
-  if (el("aiPanel")) el("aiPanel").classList.toggle("ai-off", !on);
-  if (el("aiSetup")) el("aiSetup").hidden = on;
-  if (el("provider")) el("provider").hidden = !on;
-  if (el("model")) el("model").hidden = !on;
-  if (el("askAI")) el("askAI").hidden = !on;
-}

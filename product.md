@@ -10,16 +10,14 @@ progressive web app (PWA) and an Android app from a single web codebase.
 - **Local-first** — notes live on the user's device by default (browser
   IndexedDB / app storage). No account is required to start writing.
 - **Privacy / BYOK** — there is no backend the vendor controls. Optional
-  integrations (Google Drive sync, AI assistant) are brought by the user
-  themselves via their own OAuth client ID and API keys.
+  integrations (Google Drive sync) are brought by the user
+  themselves via their own OAuth client ID.
 - **Portable** — user data can be exported and re-imported in open formats.
 
 ## Target Users
 - People who want a simple, private notebook on phone and desktop.
 - Users who prefer storing notes locally but optionally syncing to their own
   Google Drive.
-- Users who want lightweight AI help (review/summarize) without handing notes
-  to a third-party app backend.
 
 ## Core Features
 1. **Notes & Folders** — nested folder hierarchy; create, edit, rename, delete
@@ -34,11 +32,7 @@ progressive web app (PWA) and an Android app from a single web codebase.
 7. **Google Drive Sync (optional, BYOK)** — connect with the user's own Google
    OAuth Web Client ID; notes sync as plain-text files directly from the
    browser to the user's Drive. No server intermediary.
-8. **AI Assistant (optional, BYOK)** — review/summarize the current note using
-   the user's own OpenRouter key or custom OpenAI-compatible endpoints. Requests
-   go directly from the browser to the model provider.
-   (Marked BETA in the UI.)
-9. **PWA installability** — installable on desktop/mobile, standalone display,
+8. **PWA installability** — installable on desktop/mobile, standalone display,
    offline-capable via service worker.
 
 ## Non-Goals (what NoteZen deliberately is NOT)
@@ -59,14 +53,10 @@ progressive web app (PWA) and an Android app from a single web codebase.
 - **Theming:** Click appearance button → cycles Auto → Dark → Light.
 - **Drive sync:** Switch to "Google Drive" → supply OAuth Client ID → authorize
   → notes sync as .txt files in Drive.
-- **AI review:** Set OpenRouter key in Settings → open a note → "Ask AI" →
-  receives a privacy-respecting review of the note text.
 - **Data portability:** Export from sidebar → re-import on another device.
 
 ## Known Limitations (product-level)
 - Drive sync is manual/per-note and user-credentialed, not continuous background
   sync.
-- AI is review-only in current UI (summarize/refine implied but implemented as
-  "review" call).
 - Theme preference is per-browser (localStorage); not yet unified across the
   IndexedDB settings store consistently.
