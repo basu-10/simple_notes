@@ -46,7 +46,7 @@ There is **no application backend**. All persistence is client-side
 | Module | Responsibility |
 |--------|----------------|
 | `app.js` | Entry point. Opens DB, inits theme, wires all UI event handlers, registers the service worker, bootstraps first-run state. |
-| `state.js` | Single in-memory app state object (selected note, current folder, mode, tokens, endpoints, etc.). |
+| `state.js` | Single in-memory app state object (selected note, current folder, mode, drive token, etc.). |
 | `db.js` | IndexedDB wrapper. Object stores: `items` (notes/folders) and `settings` (key/value). Provides CRUD, queries by index, soft-delete/restore/purge, storage-size estimate. |
 | `ui.js` | Rendering & DOM: folder tree, note list, editor, modals, toasts, mobile view switching. |
 | `crud.js` | Create/update/delete logic for notes & folders, autosave scheduling, favorite toggle. |

@@ -4,7 +4,8 @@
   "description": "",
   "main": "sw.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "build:www": "node scripts/build-www.mjs",
     "sync": "npm run build:www && npx cap sync android",
     "apk:stage": "node scripts/stage-apk.mjs",
@@ -27,5 +28,10 @@
     "@capacitor/cli": "^6.2.1",
     "@capacitor/core": "^6.2.1",
     "@capacitor/share": "^6.0.4"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^25.0.1",
+    "vitest": "^2.1.9"
   }
 }

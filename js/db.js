@@ -74,7 +74,7 @@ export async function put(x) {
   }
   return new Promise((ok, no) => {
     let r = store("items", "readwrite").put(x);
-    r.onsuccess = ok;
+    r.onsuccess = () => ok();
     r.onerror = () => no(r.error);
   });
 }
@@ -82,7 +82,7 @@ export async function put(x) {
 export function del(id) {
   return new Promise((ok, no) => {
     let r = store("items", "readwrite").delete(id);
-    r.onsuccess = ok;
+    r.onsuccess = () => ok();
     r.onerror = () => no(r.error);
   });
 }
@@ -111,11 +111,8 @@ export async function getTrash() {
 }
 
 export async function getFavorites() {
-  return new Promise((ok, no) => {
-    let r = store("items").index("by_favorite").getAll(true);
-    r.onsuccess = () => ok(r.result.filter(x => !x.deletedAt));
-    r.onerror = () => no(r.error);
-  });
+  const items = await all();
+  return items.filter(x => x.favorite && !x.deletedAt);
 }
 
 export async function getNotesByFolder(folderId, limit = 50, offset = 0) {
@@ -175,7 +172,7 @@ export function setting(k) {
 export function saveSetting(k, v) {
   return new Promise(ok => {
     let r = store("settings", "readwrite").put({ key: k, value: v });
-    r.onsuccess = ok;
+    r.onsuccess = () => ok();
   });
 }
 
