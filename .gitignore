@@ -17,6 +17,11 @@ android/.idea/
 *.keystore
 *.jks
 
+
+# ── App artifacts ──
+js/vendor
+
+
 # ── Editor / IDE noise ──
 .vscode/
 .idea/
