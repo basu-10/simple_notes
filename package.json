@@ -6,6 +6,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "build:www": "node scripts/build-www.mjs",
     "sync": "npm run build:www && npx cap sync android",
     "apk:stage": "node scripts/stage-apk.mjs",
@@ -30,6 +31,7 @@
     "@capacitor/share": "^6.0.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.0",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^25.0.1",
     "vitest": "^2.1.9"

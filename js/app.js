@@ -12,6 +12,7 @@ import { setMode } from "./drive.js";
 import { exportData, importData } from "./export-import.js";
 import { initTheme, cycleTheme } from "./theme.js";
 import { initShareIn } from "./share-in.js";
+import { initEditor, onEditorChange, isEditorReady } from "./editor.js";
 
 $("newNote").onclick = createNote;
 $("newFolderBtn").onclick = createFolder;
@@ -40,7 +41,11 @@ $("importFile").onchange = e => e.target.files[0] && importData(e.target.files[0
 $("localMode").onclick = () => setMode("local");
 $("driveMode").onclick = () => setMode("drive");
 $("title").oninput = schedule;
-$("content").oninput = () => { updateMeta(); schedule(); };
+// Note content is driven by CKEditor (see editor.js). When the rich-text editor is
+// unavailable (e.g. jsdom), fall back to the plain textarea input.
+if (!isEditorReady()) {
+  $("content").oninput = () => { updateMeta(); schedule(); };
+}
 $("search").oninput = e => search(e.target.value);
 $("delete").onclick = () => {
   const n = state.items.find(x => x.id === state.selected);
@@ -100,6 +105,8 @@ function showShortcuts() {
 (async () => {
   await openDB();
   await initTheme();
+  await initEditor();
+  onEditorChange(() => { updateMeta(); schedule(); });
   state.items = await all();
   state.items.filter(x => x.type === "folder" && !x.color).forEach(x => x.color = "#777976");
   if (!state.items.some(x => x.type === "folder" && !x.parentId)) {

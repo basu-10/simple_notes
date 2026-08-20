@@ -1,0 +1,215 @@
+import { $, uid, now, esc } from "./utils.js";
+import { getAsset, putAsset } from "./db.js";
+
+// CKEditor 4 (vendored at js/vendor/ckeditor) wraps the existing <textarea id="content">.
+// Images are stored as IndexedDB blobs (assets store) and referenced from note HTML via
+// <img data-asset-id="..."> — never as inline base64. Object URLs are created for display
+// and revoked on every note switch to avoid leaks.
+
+let editor = null;
+const liveUrls = new Map(); // assetId -> blob: object URL (display only)
+let suppress = false;       // true while we programmatically set data
+let changeCb = null;
+
+const TOOLBAR = [
+  { name: "basic", items: ["Bold", "Italic", "Underline", "Strike", "RemoveFormat"] },
+  { name: "lists", items: ["NumberedList", "BulletedList"] },
+  { name: "links", items: ["Link", "Unlink"] },
+  { name: "insert", items: ["AssetImage", "Table", "Blockquote"] }
+];
+
+function edConfig() {
+  return {
+    toolbar: TOOLBAR,
+    // No upload* plugins are shipped in the Standard build, so there is no base64
+    // embed path. We still strip them defensively.
+    removePlugins: "elementspath,resize,uploadimage,uploadwidget,uploadfile",
+    extraPlugins: "assetimage",
+    removeButtons: "Image",
+    filebrowserUploadUrl: "about:blank#disabled",
+    height: 480,
+    autoGrow_onStartup: false,
+    // Notes are user-authored and local-only, so we keep ACF off. This lets
+    // <img data-asset-id> (no inline src until we inject a session blob: URL)
+    // survive parsing instead of being dropped by CKEditor's required-src rule.
+    allowedContent: true
+  };
+}
+
+function registerAssetImagePlugin() {
+  const registered = window.CKEDITOR.plugins.registered || {};
+  if (registered.assetimage) return;
+  window.CKEDITOR.plugins.add("assetimage", {
+    init(editor) {
+      editor.addCommand("insertAssetImage", {
+        exec() { pickFiles(); }
+      });
+      editor.ui.addButton("AssetImage", {
+        label: "Insert image",
+        command: "insertAssetImage",
+        toolbar: "insert",
+        icon: "image"
+      });
+    }
+  });
+}
+
+function pickFiles() {
+  if (!editor) return;
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.multiple = true;
+  input.onchange = () => insertImageFiles(input.files);
+  input.click();
+}
+
+async function insertImageFiles(fileList) {
+  if (!editor || !fileList) return;
+  for (const f of fileList) {
+    if (!f || !f.type || !f.type.startsWith("image/")) continue;
+    const id = uid();
+    await putAsset({
+      id,
+      blob: f,
+      type: f.type,
+      name: f.name || "image",
+      size: f.size,
+      createdAt: now()
+    });
+    const img = new window.CKEDITOR.dom.element("img");
+    img.setAttribute("data-asset-id", id);
+    img.setAttribute("alt", f.name || "image");
+    editor.insertElement(img);
+    const url = URL.createObjectURL(f);
+    img.$.src = url;
+    liveUrls.set(id, url);
+    editor.focus();
+  }
+}
+
+// Capture pasted / dropped image files ourselves so no base64 placeholder is
+// embedded by CKEditor. Runs at high priority so it precedes the clipboard plugin.
+function bindCapture() {
+  const tryCapture = evt => {
+    const data = evt.data;
+    const dt = data && data.dataTransfer;
+    if (!dt || !dt.getFilesCount || dt.getFilesCount() === 0) return;
+    const files = [];
+    for (let i = 0; i < dt.getFilesCount(); i++) {
+      const f = dt.getFile(i);
+      if (f && f.type && f.type.startsWith("image/")) files.push(f);
+    }
+    if (!files.length) return;
+    if (data.preventDefault) data.preventDefault();
+    insertImageFiles(files);
+    evt.cancel();
+  };
+  editor.on("paste", tryCapture, null, null, 999);
+  editor.on("drop", tryCapture, null, null, 999);
+}
+
+function legacyToRich(s) {
+  if (!s) return "";
+  if (s.includes("<")) return s;
+  const lines = s.split(/\r?\n/).filter(l => l.trim() !== "");
+  return (lines.map(l => `<p>${esc(l)}</p>`).join("") || "<p></p>");
+}
+
+async function collectAssetIds(html) {
+  if (!html || !html.includes("data-asset-id")) return [];
+  const ids = [...html.matchAll(/data-asset-id="([^"]+)"/g)].map(m => m[1]);
+  return [...new Set(ids)];
+}
+
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function isEditorReady() {
+  return !!editor;
+}
+
+export async function initEditor() {
+  if (typeof window === "undefined" || !window.CKEDITOR) return false;
+  const ta = $("content");
+  if (!ta || ta.dataset.ckReady) return false;
+  registerAssetImagePlugin();
+  editor = window.CKEDITOR.replace("content", edConfig());
+  await new Promise(res => {
+    const done = () => { ta.dataset.ckReady = "1"; res(); };
+    editor.on("instanceReady", () => { bindCapture(); done(); });
+    editor.on("error", done);
+    // Failsafe if instanceReady never fires.
+    setTimeout(done, 4000);
+  });
+  return true;
+}
+
+export function onEditorChange(cb) {
+  changeCb = cb;
+  if (editor) {
+    editor.on("change", () => {
+      if (suppress || !changeCb) return;
+      changeCb();
+    });
+  }
+}
+
+export function revokeAssetUrls() {
+  for (const url of liveUrls.values()) URL.revokeObjectURL(url);
+  liveUrls.clear();
+}
+
+export async function setContent(html) {
+  revokeAssetUrls();
+  const rich = legacyToRich(html || "");
+  if (!editor) {
+    const ta = $("content");
+    if (ta) ta.value = rich;
+    return;
+  }
+  const ids = await collectAssetIds(rich);
+  const urlMap = new Map();
+  for (const id of ids) {
+    try {
+      const blob = await getAsset(id);
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        urlMap.set(id, url);
+        liveUrls.set(id, url);
+      }
+    } catch { /* missing asset — alt text will show */ }
+  }
+  // CKEditor drops <img> elements that have no src during parsing, so we must
+  // inject a (session-only) blob: URL before setData and strip it again on getContent.
+  let resolved = rich;
+  for (const [id, url] of urlMap) {
+    resolved = resolved.replace(
+      new RegExp(`(<img\\b[^>]*?)(data-asset-id="${escapeRegExp(id)}")([^>]*?)>`, "g"),
+      (m, pre, da, post) => `${pre}${da}${post} src="${url}">`
+    );
+  }
+  suppress = true;
+  await new Promise(res => {
+    editor.setData(resolved, () => {
+      suppress = false;
+      res();
+    });
+  });
+}
+
+export function getContent() {
+  if (!editor) {
+    const ta = $("content");
+    return ta ? ta.value : "";
+  }
+  const html = editor.getData() || "";
+  // Strip session-only blob: src values; data-asset-id remains the source of truth.
+  return stripBlobSrc(html);
+}
+
+function stripBlobSrc(html) {
+  return html.replace(/<img\b([^>]*?)\s+src="blob:[^"]*"([^>]*)>/gi,
+    (m, pre, post) => `<img${pre}${post}>`);
+}

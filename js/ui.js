@@ -1,5 +1,6 @@
-import { $, esc, toast } from "./utils.js";
+import { $, esc, toast, stripHtml } from "./utils.js";
 import { state } from "./state.js";
+import { setContent, getContent } from "./editor.js";
 import { rename, moveNote, duplicateNote, deleteNote, deleteFolder, restoreFromTrash, purgeFromTrash, emptyTrash, toggleFavorite } from "./crud.js";
 import { getTrash } from "./db.js";
 
@@ -117,7 +118,7 @@ export function renderNotes() {
     date.textContent = new Date(x.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" });
     head.append(title, date);
     const preview = document.createElement("div"); preview.className = "note-preview";
-    preview.textContent = (x.content || "").replace(/\s+/g, " ").slice(0, 110);
+    preview.textContent = stripHtml(x.content).slice(0, 110);
     const star = document.createElement("button"); star.className = "card-star" + (x.favorite ? " on" : ""); star.title = x.favorite ? "Remove from Favorites" : "Add to Favorites";
     star.textContent = x.favorite ? "★" : "☆";
     star.onclick = (e) => {
@@ -163,7 +164,7 @@ export function renderTrash() {
     date.textContent = "Deleted " + new Date(x.deletedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
     head.append(title, date);
     const preview = document.createElement("div"); preview.className = "note-preview";
-    preview.textContent = x.type === "note" ? (x.content || "").replace(/\s+/g, " ").slice(0, 110) : `${kids(x.id).length} items`;
+    preview.textContent = x.type === "note" ? stripHtml(x.content).slice(0, 110) : `${kids(x.id).length} items`;
     const actions = document.createElement("div"); actions.className = "trash-actions";
     const restoreBtn = document.createElement("button"); restoreBtn.className = "raised"; restoreBtn.textContent = "Restore";
     restoreBtn.onclick = (e) => { e.stopPropagation(); restoreFromTrash(x.id); };
@@ -181,12 +182,13 @@ export function setMobileView(view) {
   document.querySelectorAll("#mobileNav button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
 }
 
-export function select(id) {
+export async function select(id) {
   state.selected = id;
   let n = state.items.find(x => x.id === id); if (!n) return;
   state.folder = n.parentId;
   state.showFavorites = false;
-  $("title").value = n.title; $("content").value = n.content;
+  $("title").value = n.title;
+  await setContent(n.content);
   $("date").textContent = new Date(n.updatedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) + "  ·  " + new Date(n.updatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   updateMeta(); renderAll(); updateStar();
   if (innerWidth <= 700) setMobileView("editor");
@@ -213,7 +215,7 @@ export function cycleNote(dir) {
 }
 
 export function updateMeta() {
-  $("meta").textContent = $("content").value.length.toLocaleString() + " characters";
+  $("meta").textContent = getContent().length.toLocaleString() + " characters";
 }
 
 export function modal(html) {
@@ -294,7 +296,7 @@ export function longPress(el, fn) {
 export function search(q) {
   q = q.trim().toLowerCase();
   state.showFavorites = false;
-  let notes = q ? state.items.filter(x => x.type === "note" && ((x.title + " " + x.content).toLowerCase().includes(q))) : [];
+  let notes = q ? state.items.filter(x => x.type === "note" && ((x.title + " " + stripHtml(x.content)).toLowerCase().includes(q))) : [];
   let list = $("notes");
   if (!q) return renderNotes();
   list.innerHTML = "";
@@ -302,7 +304,7 @@ export function search(q) {
   $("folderCount").textContent = notes.length + " matches";
   notes.forEach(x => {
     let r = document.createElement("div"); r.className = "note-card";
-    r.innerHTML = '<div class="note-title"><span>' + esc(x.title || "Untitled note") + '</span></div><div class="note-preview">' + esc(x.content.slice(0, 130).replace(/\s+/g, " ")) + "</div>";
+    r.innerHTML = '<div class="note-title"><span>' + esc(x.title || "Untitled note") + '</span></div><div class="note-preview">' + esc(stripHtml(x.content).slice(0, 130)) + "</div>";
     r.onclick = () => select(x.id);
     list.appendChild(r);
   });

@@ -1,4 +1,4 @@
-const CACHE = "notezen-v7";
+const CACHE = "notezen-v8";
 const ASSETS = [
   "./",
   "./index.html",
@@ -13,7 +13,12 @@ const ASSETS = [
   "./js/ui.js",
   "./js/crud.js",
   "./js/drive.js",
-  "./js/export-import.js"
+  "./js/export-import.js",
+  "./js/editor.js",
+  "./js/vendor/ckeditor/ckeditor.js",
+  "./js/vendor/ckeditor/config.js",
+  "./js/vendor/ckeditor/styles.js",
+  "./js/vendor/ckeditor/contents.css"
 ];
 
 self.addEventListener("install", e => {

@@ -41,6 +41,10 @@ progressive web app (PWA) and an Android app from a single web codebase.
 - Not a rich-text/block editor — notes are plain text.
 - Not a cross-device sync platform — Drive sync is a user-initiated,
   bring-your-own-credentials feature, not a managed sync engine.
+- Note: rich text (tables/links/images via CKEditor 4) is supported, but embedded
+  **images are stored as device-local IndexedDB blobs** referenced by `data-asset-id`.
+  They are intentionally NOT included in Google Drive sync (HTML uploads as `.txt`) or
+  in export/import bundles — so images are local-only until account/asset sync is built.
 
 ## Platforms & Distribution
 - **Web / PWA** — hosted on Cloudflare Pages; installable; works offline.

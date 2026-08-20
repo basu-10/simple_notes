@@ -1,8 +1,8 @@
 import { $, uid, now, esc, toast } from "./utils.js";
 import { state } from "./state.js";
-import { put, del, updateDbSize, softDelete, restore, purge, getTrash } from "./db.js";
+import { put, del, updateDbSize, softDelete, restore, purge, getTrash, gcAssets } from "./db.js";
 import { select, renderAll, renderNotes, modal, closeModal, root, kids, updateMeta, openMenu, updateStar } from "./ui.js";
-import { driveSync } from "./drive.js";
+import { getContent } from "./editor.js";
 
 export async function createNote() {
   let p = state.folder || root()?.id;
@@ -72,7 +72,7 @@ export function schedule() {
 export async function saveCurrent() {
   let n = state.items.find(x => x.id === state.selected);
   if (!n) return;
-  n.title = $("title").value; n.content = $("content").value; n.updatedAt = now();
+  n.title = $("title").value; n.content = getContent(); n.updatedAt = now();
   await put(n);
   updateDbSize();
   $("saveState").textContent = "Saved";
@@ -139,6 +139,7 @@ export async function restoreFromTrash(id) {
 export async function purgeFromTrash(id) {
   if (!confirm("Permanently delete?")) return;
   await purge(id);
+  await gcAssets();
   await updateDbSize();
   renderAll();
   toast("Permanently deleted");
@@ -149,6 +150,7 @@ export async function emptyTrash() {
   if (!trash.length) return toast("Trash is empty");
   if (!confirm(`Permanently delete ${trash.length} item(s)?`)) return;
   for (const x of trash) await purge(x.id);
+  await gcAssets();
   await updateDbSize();
   renderAll();
   toast("Trash emptied");

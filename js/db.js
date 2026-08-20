@@ -1,6 +1,6 @@
 import { $ } from "./utils.js";
 
-const DB = "plainnote-v2", VER = 5;
+const DB = "plainnote-v2", VER = 6;
 let db;
 
 export function openDB() {
@@ -39,6 +39,11 @@ export function openDB() {
         const tx = e.target.transaction;
         const store = tx.objectStore("items");
         if (!store.indexNames.contains("by_favorite")) store.createIndex("by_favorite", "favorite");
+      }
+      if (e.oldVersion < 6) {
+        if (!d.objectStoreNames.contains("assets")) {
+          d.createObjectStore("assets", { keyPath: "id" });
+        }
       }
     };
     r.onsuccess = () => { db = r.result; ok(db); };
@@ -103,6 +108,56 @@ export async function restore(id) {
 
 export async function purge(id) {
   await del(id);
+}
+
+export function allAssets() {
+  return new Promise((ok, no) => {
+    let r = store("assets").getAll();
+    r.onsuccess = () => ok(r.result || []);
+    r.onerror = () => no(r.error);
+  });
+}
+
+export function putAsset(a) {
+  return new Promise((ok, no) => {
+    let r = store("assets", "readwrite").put(a);
+    r.onsuccess = () => ok();
+    r.onerror = () => no(r.error);
+  });
+}
+
+export function getAsset(id) {
+  return new Promise((ok, no) => {
+    let r = store("assets").get(id);
+    r.onsuccess = () => ok(r.result ? r.result.blob : null);
+    r.onerror = () => no(r.error);
+  });
+}
+
+export function delAsset(id) {
+  return new Promise((ok, no) => {
+    let r = store("assets", "readwrite").delete(id);
+    r.onsuccess = () => ok();
+    r.onerror = () => no(r.error);
+  });
+}
+
+// Reclaim blob assets that are no longer referenced by any existing note
+// (referenced = appears as data-asset-id in some note's content, deleted or not,
+// so restore-from-trash keeps working). Call after permanent deletions.
+export async function gcAssets() {
+  const items = await all(true);
+  const referenced = new Set();
+  const re = /data-asset-id="([^"]+)"/g;
+  for (const it of items) {
+    if (!it || it.type !== "note" || !it.content) continue;
+    let m;
+    while ((m = re.exec(it.content))) referenced.add(m[1]);
+  }
+  const assets = await allAssets();
+  for (const a of assets) {
+    if (!referenced.has(a.id)) await delAsset(a.id);
+  }
 }
 
 export async function getTrash() {
@@ -180,6 +235,13 @@ async function storageBytes() {
   const items = await all();
   let bytes = 0;
   for (const x of items) bytes += new Blob([JSON.stringify(x)]).size;
+  try {
+    const assets = await allAssets();
+    for (const a of assets) {
+      const sz = a.size || (a.blob && a.blob.size) || 0;
+      bytes += sz;
+    }
+  } catch { /* assets store may not exist on very old DBs */ }
   return bytes;
 }
 
