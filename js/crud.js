@@ -4,6 +4,12 @@ import { put, del, updateDbSize, softDelete, restore, purge, getTrash, gcAssets 
 import { select, renderAll, renderNotes, modal, closeModal, root, kids, updateMeta, openMenu, updateStar, isDescendant } from "./ui.js";
 import { getContent } from "./editor.js";
 
+const FOLDER_COLORS = [["#777976", "Graphite"], ["#85877f", "Olive Gray"], ["#8a8179", "Warm Stone"], ["#7f8787", "Slate"], ["#8d7f86", "Mauve Gray"], ["#777f8a", "Blue Gray"], ["#8b8171", "Sand"], ["#696b69", "Charcoal"]];
+
+function colorGrid(selected) {
+  return `<div class="color-grid" id="colorGrid">${FOLDER_COLORS.map(([c, n]) => `<button type="button" class="swatch${selected === c ? " selected" : ""}" data-c="${c}" style="background:${c}" title="${n}"></button>`).join("")}</div>`;
+}
+
 export async function createNote() {
   let p = state.folder || root()?.id;
   let n = { id: uid(), type: "note", parentId: p, title: "", content: "", createdAt: now(), updatedAt: now() };
@@ -15,17 +21,24 @@ export async function createNote() {
 }
 
 export async function createFolder() {
+  const defaultColor = FOLDER_COLORS[0][0];
   modal(`<h2>New Folder</h2><p>Choose a name and a restrained accent color. Folder colors are stored in the note database and included in exports.</p>
   <div class="field"><label>Name</label><input id="folderName" placeholder="Folder name"></div>
-  <div class="field"><label>Color</label><select id="folderColor">
-  <option value="#777976">Graphite</option><option value="#85877f">Olive Gray</option><option value="#8a8179">Warm Stone</option><option value="#7f8787">Slate</option><option value="#8d7f86">Mauve Gray</option><option value="#777f8a">Blue Gray</option><option value="#8b8171">Sand</option><option value="#696b69">Charcoal</option>
-  </select></div>
+  <div class="field"><label>Color</label>${colorGrid(defaultColor)}</div>
   <div class="modal-actions"><button id="cancel">Cancel</button><button class="primary" id="create">Create Folder</button></div>`);
   $("cancel").onclick = closeModal;
+  let color = defaultColor;
+  const grid = $("colorGrid");
+  grid.querySelectorAll(".swatch").forEach(s => {
+    s.onclick = () => {
+      color = s.dataset.c;
+      grid.querySelectorAll(".swatch").forEach(o => o.classList.toggle("selected", o === s));
+    };
+  });
   $("create").onclick = async () => {
     let name = $("folderName").value.trim();
     if (!name) return toast("Folder name required");
-    let f = { id: uid(), type: "folder", parentId: state.folder, name, color: $("folderColor").value, createdAt: now(), updatedAt: now() };
+    let f = { id: uid(), type: "folder", parentId: state.folder, name, color, createdAt: now(), updatedAt: now() };
     state.items.push(f);
     state.folder = f.id;
     await put(f);
@@ -51,13 +64,21 @@ export async function rename(x) {
     $("noteTitle").focus();
     return;
   }
-  const colors = [["#777976", "Graphite"], ["#85877f", "Olive Gray"], ["#8a8179", "Warm Stone"], ["#7f8787", "Slate"], ["#8d7f86", "Mauve Gray"], ["#777f8a", "Blue Gray"], ["#8b8171", "Sand"], ["#696b69", "Charcoal"]];
-  modal(`<h2>Edit Folder</h2><p>Rename the folder or change its subtle accent.</p><div class="field"><label>Name</label><input id="folderName" value="${esc(x.name)}"></div><div class="field"><label>Color</label><select id="folderColor">${colors.map(([c, n]) => `<option value="${c}" ${x.color === c ? "selected" : ""}>${n}</option>`).join("")}</select></div><div class="modal-actions"><button id="cancel">Cancel</button><button class="primary" id="saveFolder">Save</button></div>`);
+  const initColor = x.color || FOLDER_COLORS[0][0];
+  modal(`<h2>Edit Folder</h2><p>Rename the folder or change its subtle accent.</p><div class="field"><label>Name</label><input id="folderName" value="${esc(x.name)}"></div><div class="field"><label>Color</label>${colorGrid(initColor)}</div><div class="modal-actions"><button id="cancel">Cancel</button><button class="primary" id="saveFolder">Save</button></div>`);
   $("cancel").onclick = closeModal;
+  let color = initColor;
+  const grid = $("colorGrid");
+  grid.querySelectorAll(".swatch").forEach(s => {
+    s.onclick = () => {
+      color = s.dataset.c;
+      grid.querySelectorAll(".swatch").forEach(o => o.classList.toggle("selected", o === s));
+    };
+  });
   $("saveFolder").onclick = async () => {
     let n = $("folderName").value.trim();
     if (!n) return toast("Folder name required");
-    x.name = n; x.color = $("folderColor").value; x.updatedAt = now();
+    x.name = n; x.color = color; x.updatedAt = now();
     await put(x); await updateDbSize();
     closeModal(); renderAll(); toast("Folder updated");
   };
@@ -130,8 +151,8 @@ export async function deleteFolder(f) {
 }
 
 export async function changeFolderColor(f) {
-  const colors = [["#777976", "Graphite"], ["#85877f", "Olive Gray"], ["#8a8179", "Warm Stone"], ["#7f8787", "Slate"], ["#8d7f86", "Mauve Gray"], ["#777f8a", "Blue Gray"], ["#8b8171", "Sand"], ["#696b69", "Charcoal"]];
-  modal(`<h2>Folder color</h2><p>Pick a subtle accent for "${esc(f.name)}".</p><div class="color-grid" id="colorGrid">${colors.map(([c, n]) => `<button class="swatch${f.color === c ? " selected" : ""}" data-c="${c}" style="background:${c}" title="${n}"></button>`).join("")}</div><div class="modal-actions"><button id="cancel">Cancel</button></div>`);
+  const initColor = f.color || FOLDER_COLORS[0][0];
+  modal(`<h2>Folder color</h2><p>Pick a subtle accent for "${esc(f.name)}".</p><div class="field"><label>Color</label>${colorGrid(initColor)}</div><div class="modal-actions"><button id="cancel">Cancel</button></div>`);
   $("cancel").onclick = closeModal;
   $("colorGrid").querySelectorAll(".swatch").forEach(s => {
     s.onclick = async () => {
