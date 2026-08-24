@@ -312,16 +312,18 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .view-opts button{height:40px;border-radius:14px;font-size:12px;color:var(--muted);border:1px solid var(--neu-border);background:linear-gradient(145deg,var(--gs),var(--ge));box-shadow:4px 4px 9px var(--neu-lo-2),-4px -4px 9px var(--neu-hi-2),inset 1px 1px 1px var(--neu-inset-soft);transition:box-shadow .15s,color .15s}
 .view-opts button.active{color:var(--text);box-shadow:3px 3px 8px var(--neu-lo),-3px -3px 8px var(--neu-hi),inset 1px 1px 1px var(--neu-inset-soft)}
 
-.notes-wrap{display:block}
+.view-wrap{display:block}
 .explorer-body[data-view="list"] .note-preview,
 .explorer-body[data-view="list"] .note-date{display:none}
 .explorer-body[data-view="list"] .note-card{padding:12px 80px 12px 12px}
-.explorer-body[data-view="small-grid"] .notes-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:9px;align-content:start}
-.explorer-body[data-view="small-grid"] .note-card{margin:0;padding:12px}
+.explorer-body[data-view="small-grid"] .view-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:9px;align-content:start}
+.explorer-body[data-view="small-grid"] .note-card,
+.explorer-body[data-view="small-grid"] .folder-row{margin:0;padding:12px}
 .explorer-body[data-view="small-grid"] .note-preview,
 .explorer-body[data-view="small-grid"] .note-date{display:none}
-.explorer-body[data-view="large-grid"] .notes-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;align-content:start}
-.explorer-body[data-view="large-grid"] .note-card{margin:0;padding:16px}
+.explorer-body[data-view="large-grid"] .view-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;align-content:start}
+.explorer-body[data-view="large-grid"] .note-card,
+.explorer-body[data-view="large-grid"] .folder-row{margin:0;padding:16px}
 .explorer-body[data-view="large-grid"] .note-preview{font-size:12px;max-width:none}
 
 .row-menu,.card-menu{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--muted);font-size:18px;line-height:1;flex:none;transition:opacity .15s,background .15s,color .15s}

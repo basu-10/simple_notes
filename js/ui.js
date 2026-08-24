@@ -20,12 +20,13 @@ export function path(id) {
 
 function sortNotes(arr) {
   const s = state.sort;
-  const colorOf = id => (state.items.find(x => x.id === id)?.color || "#777976");
+  const nameOf = x => (x.title || x.name || "");
+  const colorOf = x => (x.color || state.items.find(i => i.id === x.parentId)?.color || "#777976");
   const cmp = (a, b) => {
     switch (s) {
       case "created": return b.createdAt.localeCompare(a.createdAt);
-      case "title": return (a.title || "").localeCompare(b.title || "");
-      case "color": return colorOf(a.parentId).localeCompare(colorOf(b.parentId)) || b.updatedAt.localeCompare(a.updatedAt);
+      case "title": return nameOf(a).localeCompare(nameOf(b));
+      case "color": return colorOf(a).localeCompare(colorOf(b)) || b.updatedAt.localeCompare(a.updatedAt);
       case "modified":
       default: return b.updatedAt.localeCompare(a.updatedAt);
     }
@@ -137,7 +138,7 @@ export function renderExplorer() {
     $("folderTitle").textContent = "Favorites";
     $("folderCount").textContent = favCount + " note" + (favCount === 1 ? "" : "s");
     if (!favCount) { emptyState(ex, "No favorites yet — tap the star on a note to add it here."); return; }
-    const wrap = document.createElement("div"); wrap.className = "notes-wrap";
+    const wrap = document.createElement("div"); wrap.className = "view-wrap";
     sortNotes(state.items.filter(x => x.type === "note" && x.favorite && !x.deletedAt))
       .forEach(x => wrap.appendChild(noteCard(x)));
     ex.appendChild(wrap);
@@ -146,7 +147,7 @@ export function renderExplorer() {
   const folderId = state.folder || root()?.id;
   const folder = state.items.find(x => x.id === folderId);
   $("folderTitle").textContent = folder?.name || "All Folders";
-  const folders = kids(folderId).filter(x => x.type === "folder").sort((a, b) => a.name.localeCompare(b.name));
+  const folders = sortNotes(kids(folderId).filter(x => x.type === "folder"));
   const allNotes = kids(folderId).filter(x => x.type === "note");
   const notes = [
     ...allNotes.filter(x => x.favorite),
@@ -163,16 +164,18 @@ export function renderExplorer() {
     const name = document.createElement("span"); name.className = "folder-name"; name.textContent = "Favorites";
     const count = document.createElement("span"); count.className = "count"; count.textContent = favCount;
     favRow.append(star, name, count);
-    favRow.onclick = () => { state.showFavorites = true; state.folder = null; state.selected = null; renderAll(); if (innerWidth <= 700) setMobileView("files"); };
+    favRow.onclick = () => { state.showFavorites = true; state.folder = null; renderAll(); };
     ex.appendChild(favRow);
   }
   if (folders.length) {
     ex.appendChild(groupLabel("Folders"));
-    folders.forEach(f => ex.appendChild(folderRow(f)));
+    const wrap = document.createElement("div"); wrap.className = "view-wrap";
+    folders.forEach(f => wrap.appendChild(folderRow(f)));
+    ex.appendChild(wrap);
   }
   if (notes.length) {
     ex.appendChild(groupLabel("Notes"));
-    const wrap = document.createElement("div"); wrap.className = "notes-wrap";
+    const wrap = document.createElement("div"); wrap.className = "view-wrap";
     notes.forEach(x => wrap.appendChild(noteCard(x)));
     ex.appendChild(wrap);
   }
