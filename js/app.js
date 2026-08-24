@@ -46,7 +46,13 @@ $("title").oninput = schedule;
 if (!isEditorReady()) {
   $("content").oninput = () => { updateMeta(); schedule(); };
 }
-$("search").oninput = e => search(e.target.value);
+function runSearch() {
+  const q = $("search").value;
+  closeSettings();
+  search(q);
+}
+$("searchBtn").onclick = runSearch;
+$("search").addEventListener("keydown", e => { if (e.key === "Enter") runSearch(); });
 $("delete").onclick = () => {
   const n = state.items.find(x => x.id === state.selected);
   if (!n) return toast("Select a note first");
@@ -174,7 +180,7 @@ $("modalBackdrop").onclick = e => e.target === e.currentTarget && closeModal();
 $("trashBtn").onclick = () => { state.inTrash = !state.inTrash; state.showFavorites = false; state.inTrash ? renderTrash() : renderAll(); };
 document.addEventListener("keydown", e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") { e.preventDefault(); e.shiftKey ? createFolder() : createNote(); }
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("search").focus(); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openSettings(); $("search").focus(); }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); saveCurrent(); }
   if ((e.ctrlKey || e.metaKey) && e.key === "/") { e.preventDefault(); showShortcuts(); }
   if (e.key === "Escape") { closeModal(); if (state.inTrash) { state.inTrash = false; renderAll(); } }

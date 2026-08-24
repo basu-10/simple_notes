@@ -8,6 +8,9 @@ export function kids(id) {
   return state.items.filter(x => x.parentId === id && !x.deletedAt);
 }
 
+const FILE_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+const SUBFOLDER_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+
 export function root() {
   return state.items.find(x => x.type === "folder" && !x.parentId && !x.deletedAt);
 }
@@ -73,16 +76,26 @@ function folderRow(f) {
   row.style.setProperty("--folder-color", f.color || "#777976");
   const icon = document.createElement("span"); icon.className = "folder-icon";
   const name = document.createElement("span"); name.className = "folder-name"; name.textContent = f.name;
-  const count = document.createElement("span"); count.className = "count";
-  count.textContent = kids(f.id).filter(x => x.type === "note").length;
-  const kebab = document.createElement("button"); kebab.className = "row-menu"; kebab.title = "Folder actions";
-  kebab.innerHTML = "&#8942;";
-  kebab.onclick = (e) => {
-    e.stopPropagation();
-    const r = kebab.getBoundingClientRect();
-    openMenu(r.right - 4, r.bottom + 4, folderMenu(f));
-  };
-  row.append(icon, name, count, kebab);
+  const counts = document.createElement("span"); counts.className = "counts";
+  const noteCount = kids(f.id).filter(x => x.type === "note").length;
+  const subFolderCount = kids(f.id).filter(x => x.type === "folder").length;
+  if (noteCount) {
+    const b = document.createElement("span");
+    b.className = "count-badge";
+    b.title = noteCount + " note" + (noteCount === 1 ? "" : "s");
+    b.innerHTML = FILE_ICON_SVG + `<span>${noteCount}</span>`;
+    counts.appendChild(b);
+  }
+  if (subFolderCount) {
+    const b = document.createElement("span");
+    b.className = "count-badge";
+    b.title = subFolderCount + " folder" + (subFolderCount === 1 ? "" : "s");
+    b.innerHTML = SUBFOLDER_ICON_SVG + `<span>${subFolderCount}</span>`;
+    counts.appendChild(b);
+  }
+  const rowChildren = [icon, name];
+  if (counts.childElementCount) rowChildren.push(counts);
+  row.append(...rowChildren);
   row.onclick = () => { state.selected = null; state.folder = f.id; state.showFavorites = false; renderAll(); if (innerWidth <= 700) setMobileView("files"); };
   row.ondblclick = () => rename(f);
   longPress(row, (cx, cy) => openMenu(cx, cy, folderMenu(f)));
@@ -104,14 +117,7 @@ function noteCard(x) {
     e.stopPropagation();
     toggleFavorite(x);
   };
-  const kebab = document.createElement("button"); kebab.className = "card-menu"; kebab.title = "Note actions";
-  kebab.innerHTML = "&#8942;";
-  kebab.onclick = (e) => {
-    e.stopPropagation();
-    const r = kebab.getBoundingClientRect();
-    openMenu(r.right - 4, r.bottom + 4, noteMenu(x));
-  };
-  card.append(head, preview, star, kebab);
+  card.append(head, preview, star);
   card.onclick = () => select(x.id);
   card.ondblclick = () => rename(x);
   longPress(card, (cx, cy) => openMenu(cx, cy, noteMenu(x)));
