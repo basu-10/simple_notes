@@ -237,7 +237,7 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .crumb-item.current{color:var(--text);font-weight:600;cursor:default}
 .group-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin:14px 4px 7px}
 .folder-row{
-  --folder-color:#777976;
+  --folder-color:#4b8fe6;
   min-height:42px;display:flex;align-items:center;gap:9px;border-radius:13px;padding:0 12px;color:var(--muted);font-size:13px;margin:3px 0;cursor:pointer;
   background:linear-gradient(145deg,color-mix(in srgb,var(--folder-color) 16%,var(--gs)),color-mix(in srgb,var(--folder-color) 9%,var(--ge)));
   box-shadow:2px 2px 6px var(--row-lo),-2px -2px 6px var(--neu-hi);
@@ -246,8 +246,8 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .folder-row.fav-entry{background:var(--fav-bg)}
 .folder-name{color:var(--text);font-weight:500}
 .folder-row .counts{margin-left:auto}
-.folder-icon{width:16px;height:16px;border:1.4px solid var(--folder-color,#777976);border-radius:5px;position:relative;flex:none}
-.folder-icon:before{content:"";position:absolute;width:6px;height:3px;left:1px;top:-4px;border:1.4px solid var(--folder-color,#777976);border-bottom:0;border-radius:3px 3px 0 0}
+.folder-icon{width:16px;height:16px;border:1.4px solid var(--folder-color,#4b8fe6);border-radius:5px;position:relative;flex:none}
+.folder-icon:before{content:"";position:absolute;width:6px;height:3px;left:1px;top:-4px;border:1.4px solid var(--folder-color,#4b8fe6);border-bottom:0;border-radius:3px 3px 0 0}
 .storage{
   padding:14px;margin-top:12px;border-radius:17px;
   background:linear-gradient(145deg,var(--gs),var(--ge));

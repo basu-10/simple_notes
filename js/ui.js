@@ -24,7 +24,7 @@ export function path(id) {
 function sortNotes(arr) {
   const s = state.sort;
   const nameOf = x => (x.title || x.name || "");
-  const colorOf = x => (x.color || state.items.find(i => i.id === x.parentId)?.color || "#777976");
+  const colorOf = x => (x.color || state.items.find(i => i.id === x.parentId)?.color || "#4b8fe6");
   const cmp = (a, b) => {
     switch (s) {
       case "created": return b.createdAt.localeCompare(a.createdAt);
@@ -73,7 +73,7 @@ function breadcrumb(folderId) {
 function folderRow(f) {
   const row = document.createElement("div");
   row.className = "folder-row";
-  row.style.setProperty("--folder-color", f.color || "#777976");
+  row.style.setProperty("--folder-color", f.color || "#4b8fe6");
   const icon = document.createElement("span"); icon.className = "folder-icon";
   const name = document.createElement("span"); name.className = "folder-name"; name.textContent = f.name;
   const counts = document.createElement("span"); counts.className = "counts";

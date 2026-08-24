@@ -207,7 +207,7 @@ function showShortcuts() {
   await initEditor();
   onEditorChange(() => { updateMeta(); schedule(); });
   state.items = await all();
-  state.items.filter(x => x.type === "folder" && !x.color).forEach(x => x.color = "#777976");
+  state.items.filter(x => x.type === "folder" && !x.color).forEach(x => x.color = "#4b8fe6");
   const rootFolder = state.items.find(x => x.type === "folder" && !x.parentId);
   if (rootFolder && (rootFolder.name === "Personal" || rootFolder.name === "personal")) {
     rootFolder.name = "All Folders";
@@ -215,7 +215,7 @@ function showShortcuts() {
     await put(rootFolder);
   }
   if (!rootFolder) {
-    let f = { id: uid(), type: "folder", parentId: null, name: "All Folders", color: "#777976", createdAt: now(), updatedAt: now() };
+    let f = { id: uid(), type: "folder", parentId: null, name: "All Folders", color: "#4b8fe6", createdAt: now(), updatedAt: now() };
     state.items.push(f);
     await put(f);
   }

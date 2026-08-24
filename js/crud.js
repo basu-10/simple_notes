@@ -4,7 +4,7 @@ import { put, del, updateDbSize, softDelete, restore, purge, getTrash, gcAssets 
 import { select, renderAll, renderNotes, modal, closeModal, root, kids, updateMeta, openMenu, updateStar, isDescendant } from "./ui.js";
 import { getContent } from "./editor.js";
 
-const FOLDER_COLORS = [["#777976", "Graphite"], ["#85877f", "Olive Gray"], ["#8a8179", "Warm Stone"], ["#7f8787", "Slate"], ["#8d7f86", "Mauve Gray"], ["#777f8a", "Blue Gray"], ["#8b8171", "Sand"], ["#696b69", "Charcoal"]];
+const FOLDER_COLORS = [["#4b8fe6", "Blue"], ["#5bbf6a", "Green"], ["#e6c14b", "Gold"], ["#ec9a4b", "Orange"], ["#e3555a", "Coral"], ["#e06fa8", "Pink"], ["#8a6fe0", "Violet"], ["#3fb7ab", "Teal"]];
 
 function colorGrid(selected) {
   return `<div class="color-grid" id="colorGrid">${FOLDER_COLORS.map(([c, n]) => `<button type="button" class="swatch${selected === c ? " selected" : ""}" data-c="${c}" style="background:${c}" title="${n}"></button>`).join("")}</div>`;
@@ -192,7 +192,7 @@ export async function moveFolder(f) {
   const addRow = (id, name, color, current) => {
     const row = document.createElement("button");
     row.className = "picker-row" + (current ? " current" : "");
-    row.innerHTML = `<span class="folder-dot" style="background:${color || "#777976"}"></span><span>${esc(name)}</span>` +
+    row.innerHTML = `<span class="folder-dot" style="background:${color || "#4b8fe6"}"></span><span>${esc(name)}</span>` +
       (current ? `<small>(current)</small>` : "");
     row.onclick = async () => {
       f.parentId = id; f.updatedAt = now();
@@ -203,7 +203,7 @@ export async function moveFolder(f) {
     };
     picker.appendChild(row);
   };
-  addRow(null, "Top level", "#777976", f.parentId == null);
+  addRow(null, "Top level", "#4b8fe6", f.parentId == null);
   folders.forEach(x => addRow(x.id, x.name, x.color, x.id === f.parentId));
   $("cancel").onclick = closeModal;
 }
@@ -256,7 +256,7 @@ export async function moveNote(x) {
   folders.forEach(f => {
     const row = document.createElement("button");
     row.className = "picker-row" + (f.id === x.parentId ? " current" : "");
-    row.innerHTML = `<span class="folder-dot" style="background:${f.color || "#777976"}"></span><span>${esc(f.name)}</span>` +
+    row.innerHTML = `<span class="folder-dot" style="background:${f.color || "#4b8fe6"}"></span><span>${esc(f.name)}</span>` +
       (f.id === x.parentId ? `<small>(current)</small>` : "");
     row.onclick = async () => {
       x.parentId = f.id; x.updatedAt = now();
