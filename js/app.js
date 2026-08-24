@@ -98,6 +98,58 @@ function applyMaximize(on) {
 }
 $("maximize").onclick = () => applyMaximize(!document.querySelector(".shell").classList.contains("max"));
 try { if (localStorage.getItem("notezen-max") === "1") applyMaximize(true); } catch (e) {}
+
+const EXW_KEY = "notezen-exw";
+const exwMin = 240, exwMaxRatio = 0.7;
+function initResizer() {
+  const shell = document.querySelector(".shell");
+  const resizer = $("resizer");
+  if (!shell || !resizer) return;
+  let startX = 0, startW = 0, dragging = false;
+  try {
+    const saved = parseFloat(localStorage.getItem(EXW_KEY));
+    if (saved >= exwMin) shell.style.setProperty("--exw", saved + "px");
+  } catch (e) {}
+  function clamp(w) {
+    const max = Math.max(exwMin, innerWidth * exwMaxRatio);
+    return Math.min(Math.max(w, exwMin), max);
+  }
+  function down(e) {
+    if (innerWidth <= 700 || shell.classList.contains("max")) return;
+    dragging = true;
+    startX = e.clientX;
+    startW = parseFloat(getComputedStyle(shell).gridTemplateColumns.split(" ")[0]) || 460;
+    resizer.classList.add("dragging");
+    shell.classList.add("resizing");
+    resizer.setPointerCapture && resizer.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  }
+  function move(e) {
+    if (!dragging) return;
+    const w = clamp(startW + (e.clientX - startX));
+    shell.style.setProperty("--exw", w + "px");
+  }
+  function up() {
+    if (!dragging) return;
+    dragging = false;
+    resizer.classList.remove("dragging");
+    shell.classList.remove("resizing");
+    try { localStorage.setItem(EXW_KEY, getComputedStyle(shell).gridTemplateColumns.split(" ")[0]); } catch (e) {}
+  }
+  resizer.addEventListener("pointerdown", down);
+  addEventListener("pointermove", move, { passive: false });
+  addEventListener("pointerup", up);
+  resizer.addEventListener("keydown", e => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const cur = parseFloat(getComputedStyle(shell).gridTemplateColumns.split(" ")[0]) || 460;
+    const step = e.shiftKey ? 60 : 18;
+    const w = clamp(cur + (e.key === "ArrowRight" ? step : -step));
+    shell.style.setProperty("--exw", w + "px");
+    try { localStorage.setItem(EXW_KEY, w + "px"); } catch (e2) {}
+    e.preventDefault();
+  });
+}
+initResizer();
 $("back").onclick = () => cycleNote(-1);
 $("forward").onclick = () => cycleNote(1);
 $("modalBackdrop").onclick = e => e.target === e.currentTarget && closeModal();
