@@ -1,7 +1,7 @@
 import { $, uid, now, esc, toast } from "./utils.js";
 import { state } from "./state.js";
 import { put, del, updateDbSize, softDelete, restore, purge, getTrash, gcAssets } from "./db.js";
-import { select, renderAll, renderNotes, modal, closeModal, root, kids, updateMeta, openMenu, updateStar } from "./ui.js";
+import { select, renderAll, renderNotes, modal, closeModal, root, kids, updateMeta, openMenu, updateStar, isDescendant } from "./ui.js";
 import { getContent } from "./editor.js";
 
 export async function createNote() {
@@ -127,6 +127,64 @@ export async function deleteFolder(f) {
   if (state.folder === f.id) state.folder = f.parentId ?? null;
   renderAll();
   toast("Folder moved to Trash");
+}
+
+export async function changeFolderColor(f) {
+  const colors = [["#777976", "Graphite"], ["#85877f", "Olive Gray"], ["#8a8179", "Warm Stone"], ["#7f8787", "Slate"], ["#8d7f86", "Mauve Gray"], ["#777f8a", "Blue Gray"], ["#8b8171", "Sand"], ["#696b69", "Charcoal"]];
+  modal(`<h2>Folder color</h2><p>Pick a subtle accent for "${esc(f.name)}".</p><div class="color-grid" id="colorGrid">${colors.map(([c, n]) => `<button class="swatch${f.color === c ? " selected" : ""}" data-c="${c}" style="background:${c}" title="${n}"></button>`).join("")}</div><div class="modal-actions"><button id="cancel">Cancel</button></div>`);
+  $("cancel").onclick = closeModal;
+  $("colorGrid").querySelectorAll(".swatch").forEach(s => {
+    s.onclick = async () => {
+      f.color = s.dataset.c; f.updatedAt = now();
+      await put(f); await updateDbSize();
+      closeModal(); renderAll(); toast("Folder color updated");
+    };
+  });
+}
+
+export async function duplicateFolder(f) {
+  let children = kids(f.id);
+  let msg = children.length
+    ? `Duplicate "${f.name}" and its ${children.length} item(s)?`
+    : `Duplicate folder "${f.name}"?`;
+  if (!confirm(msg)) return;
+  const make = async (src, parentId) => {
+    let copy = { ...src, id: uid(), parentId, createdAt: now(), updatedAt: now() };
+    delete copy.deletedAt;
+    if (src.id === f.id) copy.name = src.name + " (copy)";
+    state.items.push(copy);
+    await put(copy);
+    for (let c of kids(src.id)) await make(c, copy.id);
+  };
+  await make(f, f.parentId);
+  await updateDbSize();
+  renderAll();
+  toast("Folder duplicated");
+}
+
+export async function moveFolder(f) {
+  const folders = state.items
+    .filter(x => x.type === "folder" && x.id !== f.id && !isDescendant(x.id, f.id) && !x.deletedAt)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  modal(`<h2>Move folder</h2><p>Choose the destination folder.</p><div class="folder-picker" id="picker"></div><div class="modal-actions"><button id="cancel">Cancel</button></div>`);
+  const picker = $("picker");
+  const addRow = (id, name, color, current) => {
+    const row = document.createElement("button");
+    row.className = "picker-row" + (current ? " current" : "");
+    row.innerHTML = `<span class="folder-dot" style="background:${color || "#777976"}"></span><span>${esc(name)}</span>` +
+      (current ? `<small>(current)</small>` : "");
+    row.onclick = async () => {
+      f.parentId = id; f.updatedAt = now();
+      await put(f); await updateDbSize();
+      if (state.folder === f.id) state.folder = id;
+      closeModal(); renderAll();
+      toast("Moved to " + name);
+    };
+    picker.appendChild(row);
+  };
+  addRow(null, "Top level", "#777976", f.parentId == null);
+  folders.forEach(x => addRow(x.id, x.name, x.color, x.id === f.parentId));
+  $("cancel").onclick = closeModal;
 }
 
 export async function restoreFromTrash(id) {
