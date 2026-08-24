@@ -70,13 +70,11 @@ function breadcrumb(folderId) {
 function folderRow(f) {
   const row = document.createElement("div");
   row.className = "folder-row";
-  const color = document.createElement("span"); color.className = "folder-color";
-  color.style.setProperty("--folder-color", f.color || "#777976");
+  row.style.setProperty("--folder-color", f.color || "#777976");
   const icon = document.createElement("span"); icon.className = "folder-icon";
   const name = document.createElement("span"); name.className = "folder-name"; name.textContent = f.name;
   const count = document.createElement("span"); count.className = "count";
   count.textContent = kids(f.id).filter(x => x.type === "note").length;
-  const chev = document.createElement("span"); chev.className = "row-chev"; chev.textContent = "›";
   const kebab = document.createElement("button"); kebab.className = "row-menu"; kebab.title = "Folder actions";
   kebab.innerHTML = "&#8942;";
   kebab.onclick = (e) => {
@@ -84,7 +82,7 @@ function folderRow(f) {
     const r = kebab.getBoundingClientRect();
     openMenu(r.right - 4, r.bottom + 4, folderMenu(f));
   };
-  row.append(color, icon, name, count, chev, kebab);
+  row.append(icon, name, count, kebab);
   row.onclick = () => { state.selected = null; state.folder = f.id; state.showFavorites = false; renderAll(); if (innerWidth <= 700) setMobileView("files"); };
   row.ondblclick = () => rename(f);
   longPress(row, (cx, cy) => openMenu(cx, cy, folderMenu(f)));

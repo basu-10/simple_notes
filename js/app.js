@@ -212,15 +212,15 @@ function showShortcuts() {
     state.items.push(f);
     await put(f);
   }
+  const savedView = await setting("view");
+  if (savedView) state.view = savedView;
+  const savedSort = await setting("sort");
+  if (savedSort) state.sort = savedSort;
   state.folder = root().id;
   state.selected = null;
   setMobileView("files");
   updateDbSize();
   renderAll();
-  const savedView = await setting("view");
-  if (savedView) state.view = savedView;
-  const savedSort = await setting("sort");
-  if (savedSort) state.sort = savedSort;
   if (await setting("mode") === "drive") setMode("drive");
   initShareIn();
 })().catch(e => { console.error(e); toast("Could not initialize"); });

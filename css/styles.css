@@ -217,16 +217,17 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .crumb-item.current{color:var(--text);font-weight:600;cursor:default}
 .group-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin:14px 4px 7px}
 .folder-row{
+  --folder-color:#777976;
   min-height:42px;display:flex;align-items:center;gap:9px;border-radius:13px;padding:0 12px;color:var(--muted);font-size:13px;margin:3px 0;cursor:pointer;
-  background:var(--fill-row);box-shadow:2px 2px 6px var(--row-lo),-2px -2px 6px var(--neu-hi);
+  background:linear-gradient(145deg,color-mix(in srgb,var(--folder-color) 16%,var(--gs)),color-mix(in srgb,var(--folder-color) 9%,var(--ge)));
+  box-shadow:2px 2px 6px var(--row-lo),-2px -2px 6px var(--neu-hi);
 }
-.folder-row:hover{background:var(--hover)}
+.folder-row:hover{background:linear-gradient(145deg,color-mix(in srgb,var(--folder-color) 23%,var(--gs)),color-mix(in srgb,var(--folder-color) 14%,var(--ge)))}
 .folder-row.fav-entry{background:var(--fav-bg)}
 .folder-name{color:var(--text);font-weight:500}
 .folder-row .count{margin-left:auto}
-.row-chev{width:14px;color:var(--faint);text-align:center;font-size:16px;line-height:1}
-.folder-icon{width:16px;height:16px;border:1.4px solid var(--icon);border-radius:5px;position:relative;flex:none}
-.folder-icon:before{content:"";position:absolute;width:6px;height:3px;left:1px;top:-4px;border:1.4px solid var(--icon);border-bottom:0;border-radius:3px 3px 0 0}
+.folder-icon{width:16px;height:16px;border:1.4px solid var(--folder-color,#777976);border-radius:5px;position:relative;flex:none}
+.folder-icon:before{content:"";position:absolute;width:6px;height:3px;left:1px;top:-4px;border:1.4px solid var(--folder-color,#777976);border-bottom:0;border-radius:3px 3px 0 0}
 .storage{
   padding:14px;margin-top:12px;border-radius:17px;
   background:linear-gradient(145deg,var(--gs),var(--ge));
@@ -342,8 +343,6 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .picker-row.current{color:var(--muted);cursor:default}
 
 .folder-dot{width:11px;height:11px;border-radius:50%;flex:none;box-shadow:0 0 0 2px var(--dot-shadow),1px 1px 3px var(--neu-lo)}
-
-.folder-color{width:9px;height:9px;border-radius:50%;flex:none;background:var(--folder-color,#777976);box-shadow:0 0 0 2px var(--dot-shadow),1px 1px 3px var(--neu-lo)}
 .fav-star{flex:none;width:auto;height:auto;margin:0 2px 0 0;font-size:15px;color:var(--accent);background:transparent;box-shadow:none}
 .db-size{font-size:10px;color:var(--muted);margin-top:3px}
 .mobile-nav{display:none}
