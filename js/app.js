@@ -1,6 +1,6 @@
 import { $, uid, now, toast } from "./utils.js";
 import { state } from "./state.js";
-import { openDB, all, setting, put, updateDbSize } from "./db.js";
+import { openDB, all, setting, put, updateDbSize, saveSetting } from "./db.js";
 import {
   select, renderAll, setMobileView,
   updateMeta, search, root, closeModal, renderTrash, modal, cycleNote
@@ -66,6 +66,8 @@ function openSettings() {
   let left = Math.min(r.left, innerWidth - w - 12);
   settingsPop.style.left = Math.max(12, left) + "px";
   settingsPop.style.top = (r.bottom + 8) + "px";
+  setActiveGroup($("viewOpts"), "view", state.view);
+  setActiveGroup($("sortOpts"), "sort", state.sort);
   settingsPop.hidden = false;
   requestAnimationFrame(() => settingsPop.classList.add("open"));
 }
@@ -80,6 +82,22 @@ settingsBtn.onclick = e => { e.stopPropagation(); toggleSettings(); };
 settingsPop.onclick = e => e.stopPropagation();
 document.addEventListener("click", e => { if (!settingsPop.hidden && e.target !== settingsBtn) closeSettings(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeSettings(); });
+const setActiveGroup = (container, attr, value) =>
+  container.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset[attr] === value));
+function applyView(view) {
+  state.view = view;
+  setActiveGroup($("viewOpts"), "view", view);
+  saveSetting("view", view);
+  renderAll();
+}
+function applySort(sort) {
+  state.sort = sort;
+  setActiveGroup($("sortOpts"), "sort", sort);
+  saveSetting("sort", sort);
+  renderAll();
+}
+$("viewOpts").querySelectorAll("button").forEach(b => b.onclick = () => applyView(b.dataset.view));
+$("sortOpts").querySelectorAll("button").forEach(b => b.onclick = () => applySort(b.dataset.sort));
 const MAX_ICON = '<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/>';
 const MIN_ICON = '<path d="M3 8h3a2 2 0 0 1 2 2v3M21 8h-3a2 2 0 0 0-2 2v3M3 16h3a2 2 0 0 0 2-2v-3M21 16h-3a2 2 0 0 1-2-2v-3"/>';
 function applyMaximize(on) {
@@ -199,6 +217,10 @@ function showShortcuts() {
   updateDbSize();
   let n = state.items.find(x => x.type === "note");
   n ? select(n.id) : await createNote();
+  const savedView = await setting("view");
+  if (savedView) state.view = savedView;
+  const savedSort = await setting("sort");
+  if (savedSort) state.sort = savedSort;
   if (await setting("mode") === "drive") setMode("drive");
   initShareIn();
 })().catch(e => { console.error(e); toast("Could not initialize"); });

@@ -9,5 +9,7 @@ export const state = {
   expanded: new Set(),
   mode: "local",
   driveToken: null,
-  timer: null
+  timer: null,
+  view: "details",
+  sort: "modified"
 };
