@@ -58,7 +58,7 @@ function breadcrumb(folderId) {
     c.className = "crumb-item" + (i === trail.length - 1 ? " current" : "");
     c.textContent = item.name;
     if (i < trail.length - 1) c.onclick = () => {
-      state.folder = item.id; state.showFavorites = false; renderAll();
+      state.selected = null; state.folder = item.id; state.showFavorites = false; renderAll();
       if (innerWidth <= 700) setMobileView("files");
     };
     wrap.appendChild(c);
@@ -84,7 +84,7 @@ function folderRow(f) {
     openMenu(r.right - 4, r.bottom + 4, folderMenu(f));
   };
   row.append(color, icon, name, count, chev, kebab);
-  row.onclick = () => { state.folder = f.id; state.showFavorites = false; renderAll(); if (innerWidth <= 700) setMobileView("files"); };
+  row.onclick = () => { state.selected = null; state.folder = f.id; state.showFavorites = false; renderAll(); if (innerWidth <= 700) setMobileView("files"); };
   row.ondblclick = () => rename(f);
   longPress(row, (cx, cy) => openMenu(cx, cy, folderMenu(f)));
   return row;
@@ -130,6 +130,8 @@ export function renderExplorer() {
   const ex = $("explorer");
   ex.innerHTML = "";
   ex.dataset.view = state.view;
+  const shell = document.querySelector(".shell");
+  if (shell) shell.classList.toggle("no-selection", !state.selected);
   if (state.showFavorites) {
     const favCount = state.items.filter(x => x.type === "note" && x.favorite && !x.deletedAt).length;
     $("folderTitle").textContent = "Favorites";
@@ -161,7 +163,7 @@ export function renderExplorer() {
     const name = document.createElement("span"); name.className = "folder-name"; name.textContent = "Favorites";
     const count = document.createElement("span"); count.className = "count"; count.textContent = favCount;
     favRow.append(star, name, count);
-    favRow.onclick = () => { state.showFavorites = true; state.folder = null; renderAll(); };
+    favRow.onclick = () => { state.showFavorites = true; state.folder = null; state.selected = null; renderAll(); if (innerWidth <= 700) setMobileView("files"); };
     ex.appendChild(favRow);
   }
   if (folders.length) {

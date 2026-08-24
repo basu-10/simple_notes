@@ -213,10 +213,10 @@ function showShortcuts() {
     await put(f);
   }
   state.folder = root().id;
+  state.selected = null;
   setMobileView("files");
   updateDbSize();
-  let n = state.items.find(x => x.type === "note");
-  n ? select(n.id) : await createNote();
+  renderAll();
   const savedView = await setting("view");
   if (savedView) state.view = savedView;
   const savedSort = await setting("sort");
