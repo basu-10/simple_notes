@@ -72,6 +72,7 @@ function openSettings() {
   let left = Math.min(r.left, innerWidth - w - 12);
   settingsPop.style.left = Math.max(12, left) + "px";
   settingsPop.style.top = (r.bottom + 8) + "px";
+  settingsPop.style.maxHeight = (innerHeight - r.bottom - 12) + "px";
   setActiveGroup($("viewOpts"), "view", state.view);
   setActiveGroup($("sortOpts"), "sort", state.sort);
   settingsPop.hidden = false;
