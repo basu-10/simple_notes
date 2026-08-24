@@ -58,6 +58,28 @@ $("star").onclick = () => {
   toggleFavorite(n);
 };
 $("theme").onclick = cycleTheme;
+const settingsBtn = $("settingsBtn");
+const settingsPop = $("settingsPop");
+function openSettings() {
+  const r = settingsBtn.getBoundingClientRect();
+  const w = settingsPop.offsetWidth || 264;
+  let left = Math.min(r.left, innerWidth - w - 12);
+  settingsPop.style.left = Math.max(12, left) + "px";
+  settingsPop.style.top = (r.bottom + 8) + "px";
+  settingsPop.hidden = false;
+  requestAnimationFrame(() => settingsPop.classList.add("open"));
+}
+function closeSettings() {
+  settingsPop.classList.remove("open");
+  settingsPop.hidden = true;
+}
+function toggleSettings() {
+  if (settingsPop.hidden) openSettings(); else closeSettings();
+}
+settingsBtn.onclick = e => { e.stopPropagation(); toggleSettings(); };
+settingsPop.onclick = e => e.stopPropagation();
+document.addEventListener("click", e => { if (!settingsPop.hidden && e.target !== settingsBtn) closeSettings(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeSettings(); });
 const MAX_ICON = '<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/>';
 const MIN_ICON = '<path d="M3 8h3a2 2 0 0 1 2 2v3M21 8h-3a2 2 0 0 0-2 2v3M3 16h3a2 2 0 0 0 2-2v-3M21 16h-3a2 2 0 0 1-2-2v-3"/>';
 function applyMaximize(on) {

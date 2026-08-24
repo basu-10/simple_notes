@@ -288,6 +288,17 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .ctx-item.danger{color:var(--err)}
 .ctx-item.danger:hover,.ctx-item.danger:active{background:var(--err-bg)}
 
+.settings-pop{position:fixed;z-index:58;width:264px;padding:14px;border-radius:20px;background:linear-gradient(145deg,var(--gs),var(--ge));border:1px solid var(--neu-border);box-shadow:12px 12px 30px var(--neu-lo),-12px -12px 30px var(--neu-hi);opacity:0;transform:translateY(-6px) scale(.98);transform-origin:top left;transition:opacity .14s ease,transform .14s ease;pointer-events:none}
+.settings-pop.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+.settings-pop[hidden]{display:none}
+.settings-block+.settings-block{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.settings-title{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.settings-actions{display:flex;flex-direction:column;gap:8px}
+.settings-actions button{display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:16px;font-size:13px;color:var(--text);background:linear-gradient(145deg,var(--gs),var(--ge));box-shadow:4px 4px 9px var(--neu-lo),-4px -4px 9px var(--neu-hi);transition:box-shadow .15s,color .15s}
+.settings-actions button:hover{color:var(--accent)}
+.settings-actions button svg{flex:none;stroke:currentColor;fill:none}
+.settings-actions button span{flex:1;text-align:left}
+
 .row-menu,.card-menu{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--muted);font-size:18px;line-height:1;flex:none;transition:opacity .15s,background .15s,color .15s}
 .row-menu{margin-left:6px}
 .row-menu:hover,.card-menu:hover{background:var(--hover);color:var(--text)}
