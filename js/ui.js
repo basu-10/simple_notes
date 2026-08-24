@@ -18,133 +18,147 @@ export function path(id) {
   return a.join(" / ");
 }
 
-export function renderTree() {
-  const t = $("tree");
-  t.innerHTML = "";
-  const favCount = state.items.filter(x => x.type === "note" && x.favorite && !x.deletedAt).length;
-  const favRow = document.createElement("div");
-  favRow.className = "tree-row fav-row" + (state.showFavorites ? " active" : "");
-  favRow.innerHTML = `<span class="folder-color fav-star" style="--folder-color:#b89a52">★</span><span class="fav-label">Favorites</span><span class="count">${favCount}</span>`;
-  favRow.onclick = () => {
-    state.showFavorites = true;
-    state.folder = null;
-    renderAll();
-    if (innerWidth <= 700) setMobileView("notes");
-  };
-  t.appendChild(favRow);
-  function ensurePath(id) {
-    let x = state.items.find(y => y.id === id);
-    while (x) { state.expanded.add(x.id); x = x.parentId ? state.items.find(y => y.id === x.parentId) : null; }
-  }
-  if (state.folder) ensurePath(state.folder);
-  function draw(parentId, depth) {
-    const folders = kids(parentId).filter(x => x.type === "folder").sort((a, b) => a.name.localeCompare(b.name));
-    folders.forEach(f => {
-      const row = document.createElement("div");
-      row.className = "tree-row " + (state.folder === f.id ? "active" : "");
-      row.style.paddingLeft = (10 + depth * 15) + "px";
-      const twist = document.createElement("span"); twist.className = "twisty";
-      const hasKids = kids(f.id).length > 0;
-      const open = state.expanded.has(f.id) || !f.parentId;
-      twist.textContent = hasKids ? (open ? "⌄" : "›") : "";
-      const color = document.createElement("span"); color.className = "folder-color";
-      color.style.setProperty("--folder-color", f.color || "#777976");
-      const icon = document.createElement("span"); icon.className = "folder-icon";
-      const name = document.createElement("span"); name.textContent = f.name;
-      const count = document.createElement("span"); count.className = "count";
-      count.textContent = kids(f.id).filter(x => x.type === "note").length;
-      const kebab = document.createElement("button"); kebab.className = "row-menu"; kebab.title = "Folder actions";
-      kebab.innerHTML = "&#8942;";
-      kebab.onclick = (e) => {
-        e.stopPropagation();
-        const r = kebab.getBoundingClientRect();
-        openMenu(r.right - 4, r.bottom + 4, folderMenu(f));
-      };
-      row.append(twist, color, icon, name, count, kebab);
-      twist.onclick = (e) => {
-        e.stopPropagation();
-        if (!hasKids) return;
-        if (state.expanded.has(f.id)) state.expanded.delete(f.id);
-        else state.expanded.add(f.id);
-        renderAll();
-      };
-      row.onclick = () => { state.folder = f.id; state.expanded.add(f.id); state.showFavorites = false; renderAll(); if (innerWidth <= 700) setMobileView("notes"); };
-      row.ondblclick = () => rename(f);
-      longPress(row, (cx, cy) => openMenu(cx, cy, folderMenu(f)));
-      t.appendChild(row);
-      if (open) draw(f.id, depth + 1);
-    });
-  }
-  draw(null, 0);
-  const sidebar = t.closest(".sidebar");
-  if (!t.dataset.bound) {
-    t.dataset.bound = "1";
-    const deselect = () => { state.folder = null; state.showFavorites = false; renderAll(); };
-    t.addEventListener("click", e => { if (e.target === t) deselect(); });
-    if (sidebar) sidebar.addEventListener("click", e => {
-      if (e.target === sidebar || e.target.classList?.contains("section-label")) deselect();
-    });
-  }
-  if (sidebar) sidebar.classList.toggle("root-selected", state.folder === null);
+function emptyState(parent, msg) {
+  const e = document.createElement("div");
+  e.className = "empty-state";
+  e.textContent = msg;
+  parent.appendChild(e);
 }
 
-export function renderNotes() {
-  const list = $("notes");
-  let notes, title;
+function breadcrumb(folderId) {
+  const wrap = document.createElement("div");
+  wrap.className = "crumb";
+  const trail = [];
+  let x = state.items.find(y => y.id === folderId);
+  while (x) { trail.unshift(x); x = x.parentId ? state.items.find(y => y.id === x.parentId) : null; }
+  trail.forEach((item, i) => {
+    if (i > 0) {
+      const sep = document.createElement("span");
+      sep.className = "crumb-sep";
+      sep.textContent = "›";
+      wrap.appendChild(sep);
+    }
+    const c = document.createElement("button");
+    c.className = "crumb-item" + (i === trail.length - 1 ? " current" : "");
+    c.textContent = item.name;
+    if (i < trail.length - 1) c.onclick = () => {
+      state.folder = item.id; state.showFavorites = false; renderAll();
+      if (innerWidth <= 700) setMobileView("files");
+    };
+    wrap.appendChild(c);
+  });
+  return wrap;
+}
+
+function folderRow(f) {
+  const row = document.createElement("div");
+  row.className = "folder-row";
+  const color = document.createElement("span"); color.className = "folder-color";
+  color.style.setProperty("--folder-color", f.color || "#777976");
+  const icon = document.createElement("span"); icon.className = "folder-icon";
+  const name = document.createElement("span"); name.className = "folder-name"; name.textContent = f.name;
+  const count = document.createElement("span"); count.className = "count";
+  count.textContent = kids(f.id).filter(x => x.type === "note").length;
+  const chev = document.createElement("span"); chev.className = "row-chev"; chev.textContent = "›";
+  const kebab = document.createElement("button"); kebab.className = "row-menu"; kebab.title = "Folder actions";
+  kebab.innerHTML = "&#8942;";
+  kebab.onclick = (e) => {
+    e.stopPropagation();
+    const r = kebab.getBoundingClientRect();
+    openMenu(r.right - 4, r.bottom + 4, folderMenu(f));
+  };
+  row.append(color, icon, name, count, chev, kebab);
+  row.onclick = () => { state.folder = f.id; state.showFavorites = false; renderAll(); if (innerWidth <= 700) setMobileView("files"); };
+  row.ondblclick = () => rename(f);
+  longPress(row, (cx, cy) => openMenu(cx, cy, folderMenu(f)));
+  return row;
+}
+
+function noteCard(x) {
+  const card = document.createElement("div"); card.className = "note-card " + (x.id === state.selected ? "active" : "") + (x.favorite ? " is-fav" : "");
+  const head = document.createElement("div"); head.className = "note-title";
+  const title = document.createElement("span"); title.textContent = x.title || "Untitled note";
+  const date = document.createElement("span"); date.className = "note-date";
+  date.textContent = new Date(x.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  head.append(title, date);
+  const preview = document.createElement("div"); preview.className = "note-preview";
+  preview.textContent = stripHtml(x.content).slice(0, 110);
+  const star = document.createElement("button"); star.className = "card-star" + (x.favorite ? " on" : ""); star.title = x.favorite ? "Remove from Favorites" : "Add to Favorites";
+  star.textContent = x.favorite ? "★" : "☆";
+  star.onclick = (e) => {
+    e.stopPropagation();
+    toggleFavorite(x);
+  };
+  const kebab = document.createElement("button"); kebab.className = "card-menu"; kebab.title = "Note actions";
+  kebab.innerHTML = "&#8942;";
+  kebab.onclick = (e) => {
+    e.stopPropagation();
+    const r = kebab.getBoundingClientRect();
+    openMenu(r.right - 4, r.bottom + 4, noteMenu(x));
+  };
+  card.append(head, preview, star, kebab);
+  card.onclick = () => select(x.id);
+  card.ondblclick = () => rename(x);
+  longPress(card, (cx, cy) => openMenu(cx, cy, noteMenu(x)));
+  return card;
+}
+
+function groupLabel(text) {
+  const lbl = document.createElement("div");
+  lbl.className = "group-label";
+  lbl.textContent = text;
+  return lbl;
+}
+
+export function renderExplorer() {
+  const ex = $("explorer");
+  ex.innerHTML = "";
   if (state.showFavorites) {
-    notes = state.items.filter(x => x.type === "note" && x.favorite && !x.deletedAt);
-    title = "Favorites";
-  } else {
-    const folderId = state.folder || root()?.id;
-    notes = kids(folderId).filter(x => x.type === "note");
-    title = state.items.find(x => x.id === folderId)?.name || "Personal";
-  }
-  notes.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0) || b.updatedAt.localeCompare(a.updatedAt));
-  list.innerHTML = "";
-  $("folderTitle").textContent = title;
-  $("folderCount").textContent = notes.length + " note" + (notes.length === 1 ? "" : "s");
-  if (state.showFavorites && !notes.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.textContent = "No favorites yet — tap the star on a note to add it here.";
-    list.appendChild(empty);
+    const favCount = state.items.filter(x => x.type === "note" && x.favorite && !x.deletedAt).length;
+    $("folderTitle").textContent = "Favorites";
+    $("folderCount").textContent = favCount + " note" + (favCount === 1 ? "" : "s");
+    if (!favCount) { emptyState(ex, "No favorites yet — tap the star on a note to add it here."); return; }
+    state.items.filter(x => x.type === "note" && x.favorite && !x.deletedAt)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .forEach(x => ex.appendChild(noteCard(x)));
     return;
   }
-  notes.forEach((x, i) => {
-    const card = document.createElement("div"); card.className = "note-card " + (x.id === state.selected ? "active" : "") + (x.favorite ? " is-fav" : "");
-    const head = document.createElement("div"); head.className = "note-title";
-    const title = document.createElement("span"); title.textContent = x.title || "Untitled note";
-    const date = document.createElement("span"); date.className = "note-date";
-    date.textContent = new Date(x.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    head.append(title, date);
-    const preview = document.createElement("div"); preview.className = "note-preview";
-    preview.textContent = stripHtml(x.content).slice(0, 110);
-    const star = document.createElement("button"); star.className = "card-star" + (x.favorite ? " on" : ""); star.title = x.favorite ? "Remove from Favorites" : "Add to Favorites";
-    star.textContent = x.favorite ? "★" : "☆";
-    star.onclick = (e) => {
-      e.stopPropagation();
-      toggleFavorite(x);
-    };
-    const kebab = document.createElement("button"); kebab.className = "card-menu"; kebab.title = "Note actions";
-    kebab.innerHTML = "&#8942;";
-    kebab.onclick = (e) => {
-      e.stopPropagation();
-      const r = kebab.getBoundingClientRect();
-      openMenu(r.right - 4, r.bottom + 4, noteMenu(x));
-    };
-    card.append(head, preview, star, kebab);
-    card.onclick = () => select(x.id);
-    card.ondblclick = () => rename(x);
-    longPress(card, (cx, cy) => openMenu(cx, cy, noteMenu(x)));
-    list.appendChild(card);
-    if (i < notes.length - 1) { const d = document.createElement("div"); d.className = "note-divider"; list.appendChild(d); }
-  });
+  const folderId = state.folder || root()?.id;
+  const folder = state.items.find(x => x.id === folderId);
+  $("folderTitle").textContent = folder?.name || "Personal";
+  const folders = kids(folderId).filter(x => x.type === "folder").sort((a, b) => a.name.localeCompare(b.name));
+  const notes = kids(folderId).filter(x => x.type === "note")
+    .sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0) || b.updatedAt.localeCompare(a.updatedAt));
+  $("folderCount").textContent = notes.length + " note" + (notes.length === 1 ? "" : "s");
+  ex.appendChild(breadcrumb(folderId));
+  const favCount = state.items.filter(x => x.type === "note" && x.favorite && !x.deletedAt).length;
+  if (favCount) {
+    const favRow = document.createElement("div");
+    favRow.className = "folder-row fav-entry";
+    const star = document.createElement("span"); star.className = "fav-star"; star.textContent = "★";
+    const name = document.createElement("span"); name.className = "folder-name"; name.textContent = "Favorites";
+    const count = document.createElement("span"); count.className = "count"; count.textContent = favCount;
+    favRow.append(star, name, count);
+    favRow.onclick = () => { state.showFavorites = true; state.folder = null; renderAll(); };
+    ex.appendChild(favRow);
+  }
+  if (folders.length) {
+    ex.appendChild(groupLabel("Folders"));
+    folders.forEach(f => ex.appendChild(folderRow(f)));
+  }
+  if (notes.length) {
+    ex.appendChild(groupLabel("Notes"));
+    notes.forEach(x => ex.appendChild(noteCard(x)));
+  }
+  if (!folders.length && !notes.length) emptyState(ex, "Nothing here yet — create a note or folder.");
 }
 
-export function renderAll() { renderTree(); renderNotes(); }
+export function renderNotes() { renderExplorer(); }
+
+export function renderAll() { renderExplorer(); }
 
 export function renderTrash() {
-  const list = $("notes");
+  const list = $("explorer");
   list.innerHTML = "";
   $("folderTitle").textContent = "Trash";
   const trash = state.items.filter(x => x.deletedAt).sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
@@ -297,7 +311,7 @@ export function search(q) {
   q = q.trim().toLowerCase();
   state.showFavorites = false;
   let notes = q ? state.items.filter(x => x.type === "note" && ((x.title + " " + stripHtml(x.content)).toLowerCase().includes(q))) : [];
-  let list = $("notes");
+  let list = $("explorer");
   if (!q) return renderNotes();
   list.innerHTML = "";
   $("folderTitle").textContent = "Search";

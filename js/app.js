@@ -18,7 +18,7 @@ $("newNote").onclick = createNote;
 $("newFolderBtn").onclick = createFolder;
 document.querySelectorAll("#mobileNav button").forEach(b => b.onclick = () => setMobileView(b.dataset.view));
 
-const SWIPE_VIEWS = ["folders", "notes", "editor"];
+const SWIPE_VIEWS = ["files", "editor"];
 let swipeX = 0, swipeY = 0, swipeT = 0;
 const shellEl = document.querySelector(".shell");
 shellEl.addEventListener("touchstart", e => {
@@ -137,7 +137,7 @@ function showShortcuts() {
     await put(f);
   }
   state.folder = root().id;
-  setMobileView("folders");
+  setMobileView("files");
   updateDbSize();
   let n = state.items.find(x => x.type === "note");
   n ? select(n.id) : await createNote();
