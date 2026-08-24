@@ -362,6 +362,11 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .picker-row small{margin-left:auto;color:var(--muted);font-size:11px}
 .picker-row.current{color:var(--muted);cursor:default}
 
+.color-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:6px}
+.swatch{width:100%;aspect-ratio:1;border-radius:14px;border:0;cursor:pointer;box-shadow:inset 1px 1px 3px var(--inset-line-2),inset -1px -1px 3px var(--inset-hi),3px 3px 8px var(--neu-lo),-3px -3px 8px var(--neu-hi);transition:transform .12s ease}
+.swatch:hover{transform:translateY(-2px)}
+.swatch.selected{outline:2px solid var(--text);outline-offset:3px}
+
 .folder-dot{width:11px;height:11px;border-radius:50%;flex:none;box-shadow:0 0 0 2px var(--dot-shadow),1px 1px 3px var(--neu-lo)}
 .fav-star{flex:none;width:auto;height:auto;margin:0 2px 0 0;font-size:15px;color:var(--accent);background:transparent;box-shadow:none}
 .db-size{font-size:10px;color:var(--muted);margin-top:3px}

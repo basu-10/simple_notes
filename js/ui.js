@@ -1,7 +1,7 @@
 import { $, esc, toast, stripHtml } from "./utils.js";
 import { state } from "./state.js";
 import { setContent, getContent } from "./editor.js";
-import { rename, moveNote, duplicateNote, deleteNote, deleteFolder, restoreFromTrash, purgeFromTrash, emptyTrash, toggleFavorite } from "./crud.js";
+import { rename, moveNote, duplicateNote, deleteNote, deleteFolder, restoreFromTrash, purgeFromTrash, emptyTrash, toggleFavorite, changeFolderColor, duplicateFolder, moveFolder } from "./crud.js";
 import { getTrash } from "./db.js";
 
 export function kids(id) {
@@ -279,8 +279,18 @@ const ICONS = {
   rename: '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   move: '<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>',
   copy: '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
-  trash: '<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>'
+  trash: '<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
+  color: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18"/></svg>'
 };
+
+export function isDescendant(candidateId, ancestorId) {
+  let x = state.items.find(i => i.id === candidateId);
+  while (x && x.parentId) {
+    if (x.parentId === ancestorId) return true;
+    x = state.items.find(i => i.id === x.parentId);
+  }
+  return false;
+}
 
 export function openMenu(x, y, items) {
   const m = $("contextMenu");
@@ -320,6 +330,9 @@ export function noteMenu(x) {
 
 export function folderMenu(f) {
   return [
+    { label: "Change color", icon: "color", onClick: () => changeFolderColor(f) },
+    { label: "Move to…", icon: "move", onClick: () => moveFolder(f) },
+    { label: "Duplicate", icon: "copy", onClick: () => duplicateFolder(f) },
     { label: "Rename", icon: "rename", onClick: () => rename(f) },
     { label: "Delete", icon: "trash", danger: true, onClick: () => deleteFolder(f) }
   ];
