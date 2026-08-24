@@ -132,7 +132,7 @@ function showShortcuts() {
   state.items = await all();
   state.items.filter(x => x.type === "folder" && !x.color).forEach(x => x.color = "#777976");
   if (!state.items.some(x => x.type === "folder" && !x.parentId)) {
-    let f = { id: uid(), type: "folder", parentId: null, name: "Personal", color: "#777976", createdAt: now(), updatedAt: now() };
+    let f = { id: uid(), type: "folder", parentId: null, name: "All Folders", color: "#777976", createdAt: now(), updatedAt: now() };
     state.items.push(f);
     await put(f);
   }

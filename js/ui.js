@@ -31,6 +31,7 @@ function breadcrumb(folderId) {
   const trail = [];
   let x = state.items.find(y => y.id === folderId);
   while (x) { trail.unshift(x); x = x.parentId ? state.items.find(y => y.id === x.parentId) : null; }
+  if (trail.length <= 1) return wrap;
   trail.forEach((item, i) => {
     if (i > 0) {
       const sep = document.createElement("span");
@@ -125,12 +126,13 @@ export function renderExplorer() {
   }
   const folderId = state.folder || root()?.id;
   const folder = state.items.find(x => x.id === folderId);
-  $("folderTitle").textContent = folder?.name || "Personal";
+  $("folderTitle").textContent = folder?.name || "All Folders";
   const folders = kids(folderId).filter(x => x.type === "folder").sort((a, b) => a.name.localeCompare(b.name));
   const notes = kids(folderId).filter(x => x.type === "note")
     .sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0) || b.updatedAt.localeCompare(a.updatedAt));
   $("folderCount").textContent = notes.length + " note" + (notes.length === 1 ? "" : "s");
-  ex.appendChild(breadcrumb(folderId));
+  const bc = breadcrumb(folderId);
+  if (bc.childElementCount) ex.appendChild(bc);
   const favCount = state.items.filter(x => x.type === "note" && x.favorite && !x.deletedAt).length;
   if (favCount) {
     const favRow = document.createElement("div");

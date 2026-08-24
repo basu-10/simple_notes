@@ -7,8 +7,6 @@ export function setMode(m) {
   state.mode = m;
   $("localMode").classList.toggle("active", m === "local");
   $("driveMode").classList.toggle("active", m === "drive");
-  $("storageType").textContent = m === "local" ? "Local" : state.driveToken ? "Google Drive" : "Drive";
-  $("storageSub").textContent = m === "local" ? "IndexedDB · browser only" : "Google Drive · OAuth";
   saveSetting("mode", m);
   if (m === "drive" && !state.driveToken) driveSetup();
 }
