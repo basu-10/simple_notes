@@ -255,7 +255,8 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
   flex:1;overflow:auto;padding:48px clamp(30px,5vw,70px) 38px;
   background:
     radial-gradient(circle at 92% 18%,var(--app-rad-c),transparent 27%),
-    linear-gradient(145deg,var(--editor-a),var(--editor-b));
+    linear-gradient(145deg,var(--editor-a),var(--editor-b)),
+    var(--bg);
   position:relative;
 }
 .editor:after{
