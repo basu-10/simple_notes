@@ -1,6 +1,6 @@
 import { $, now, uid, toast, esc } from "./utils.js";
 import { state } from "./state.js";
-import { openDB, getDB, updateDbSize } from "./db.js";
+import { openDB, getDB, updateDbSize, getAsset } from "./db.js";
 import { renderAll, modal, closeModal } from "./ui.js";
 
 const REQUIRED_NOTE = ["id", "type", "parentId", "title", "content", "createdAt", "updatedAt"];
@@ -124,9 +124,9 @@ export async function exportData() {
   };
 }
 
-export function exportNote(item) {
+export async function exportNote(item) {
   if (!item) return;
-  const body = htmlToRtf(item.content, item.title);
+  const body = await htmlToRtf(item.content, item.title);
   const safe = (item.title || "Untitled note").replace(/[^\w.-]+/g, "_").slice(0, 60) || "note";
   const fileName = safe + ".rtf";
   const b = new Blob([body], { type: "application/rtf" });
@@ -177,7 +177,48 @@ function parseRtfFontSize(s) {
   return m ? parseFloat(m[1]) : null;
 }
 
-function htmlToRtf(html, title) {
+function bufToHex(buf) {
+  const bytes = new Uint8Array(buf);
+  let s = "";
+  for (let i = 0; i < bytes.length; i++) s += bytes[i].toString(16).padStart(2, "0");
+  return s;
+}
+
+function loadImageDims(blob) {
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+async function blobToRtfPict(blob) {
+  const type = blob.type || "";
+  let fmt = null;
+  if (type.includes("png")) fmt = "pngblip";
+  else if (type.includes("jpeg")) fmt = "jpegblip";
+  if (!fmt) return null;
+
+  const buf = await blob.arrayBuffer();
+  const dims = await loadImageDims(blob);
+  if (!dims || !dims.w || !dims.h) return null;
+
+  const MAX_W = 8640; // 6 inches in twips
+  let gw = Math.round(dims.w * 15);
+  let gh = Math.round(dims.h * 15);
+  if (gw > MAX_W) {
+    const scale = MAX_W / gw;
+    gw = MAX_W;
+    gh = Math.round(gh * scale);
+  }
+
+  return `{\\pict\\${fmt}\\picw${dims.w}\\pich${dims.h}` +
+    `\\picwgoal${gw}\\pichgoal${gh} ${bufToHex(buf)}}`;
+}
+
+async function htmlToRtf(html, title) {
   let out = "";
   const colorList = [];
   const colorIndex = new Map();
@@ -200,73 +241,83 @@ function htmlToRtf(html, title) {
     return { on, off };
   }
 
-  function renderNode(node) {
+  async function renderNode(node) {
     for (const child of node.childNodes) {
       if (child.nodeType === Node.TEXT_NODE) out += rtfEscape(child.nodeValue);
-      else if (child.nodeType === Node.ELEMENT_NODE) renderElement(child);
+      else if (child.nodeType === Node.ELEMENT_NODE) await renderElement(child);
     }
   }
 
-  function renderList(el, ordered) {
+  async function renderList(el, ordered) {
     let n = 1;
     for (const li of el.children) {
-      if (li.tagName.toLowerCase() !== "li") { renderElement(li); continue; }
+      if (li.tagName.toLowerCase() !== "li") { await renderElement(li); continue; }
       out += "\\par ";
       out += ordered ? (n + ".\\tab ") : "\\u2022\\tab ";
       n++;
-      renderNode(li);
+      await renderNode(li);
       out += "\\par ";
     }
   }
 
-  function renderElement(el) {
+  async function renderElement(el) {
     const tag = el.tagName.toLowerCase();
     const { on, off } = inlineStyle(el);
     switch (tag) {
       case "br": out += "\\par "; return;
       case "p":
       case "div":
-        out += on; renderNode(el); out += off + "\\par "; return;
+        out += on; await renderNode(el); out += off + "\\par "; return;
       case "b":
-      case "strong": out += on + "\\b "; renderNode(el); out += "\\b0 " + off; return;
+      case "strong": out += on + "\\b "; await renderNode(el); out += "\\b0 " + off; return;
       case "i":
-      case "em": out += on + "\\i "; renderNode(el); out += "\\i0 " + off; return;
-      case "u": out += on + "\\ul "; renderNode(el); out += "\\ul0 " + off; return;
+      case "em": out += on + "\\i "; await renderNode(el); out += "\\i0 " + off; return;
+      case "u": out += on + "\\ul "; await renderNode(el); out += "\\ul0 " + off; return;
       case "s":
       case "strike":
-      case "del": out += on + "\\strike "; renderNode(el); out += "\\strike0 " + off; return;
-      case "h1": out += on + "\\fs36\\b "; renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
-      case "h2": out += on + "\\fs30\\b "; renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
-      case "h3": out += on + "\\fs28\\b "; renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
-      case "h4": out += on + "\\fs26\\b "; renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
+      case "del": out += on + "\\strike "; await renderNode(el); out += "\\strike0 " + off; return;
+      case "h1": out += on + "\\fs36\\b "; await renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
+      case "h2": out += on + "\\fs30\\b "; await renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
+      case "h3": out += on + "\\fs28\\b "; await renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
+      case "h4": out += on + "\\fs26\\b "; await renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
       case "h5":
-      case "h6": out += on + "\\fs24\\b "; renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
-      case "blockquote": out += on + "\\li720\\ri720 "; renderNode(el); out += "\\li0\\ri0 " + off + "\\par "; return;
-      case "ul": renderList(el, false); return;
-      case "ol": renderList(el, true); return;
+      case "h6": out += on + "\\fs24\\b "; await renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
+      case "blockquote": out += on + "\\li720\\ri720 "; await renderNode(el); out += "\\li0\\ri0 " + off + "\\par "; return;
+      case "ul": await renderList(el, false); return;
+      case "ol": await renderList(el, true); return;
       case "a": {
         const href = el.getAttribute("href");
-        renderNode(el);
+        await renderNode(el);
         if (href) out += " (" + rtfEscape(href) + ")";
         out += "\\par "; return;
       }
       case "img": {
+        const aid = el.dataset.assetId || el.getAttribute("data-asset-id");
+        if (aid) {
+          try {
+            const blob = await getAsset(aid);
+            if (blob) {
+              const pict = await blobToRtfPict(blob);
+              if (pict) { out += pict + " "; return; }
+            }
+          } catch (e) { /* fall back to alt text */ }
+        }
         const alt = el.getAttribute("alt");
         if (alt) out += rtfEscape(alt);
         return;
       }
-      case "table": out += "\\par "; renderNode(el); out += "\\par "; return;
-      case "tr": renderNode(el); out += "\\par "; return;
+      case "table": out += "\\par "; await renderNode(el); out += "\\par "; return;
+      case "tr": await renderNode(el); out += "\\par "; return;
       case "td":
-      case "th": renderNode(el); out += "\\tab "; return;
+      case "th": await renderNode(el); out += "\\tab "; return;
       case "hr": out += "\\par\\line "; return;
-      default: out += on; renderNode(el); out += off; return;
+      default: out += on; await renderNode(el); out += off; return;
     }
   }
 
   const doc = new DOMParser().parseFromString(html || "", "text/html");
   if (title) out += "\\fs36\\b " + rtfEscape(title) + "\\b0\\fs22\\par ";
-  renderNode(doc.body);
+  await renderNode(doc.body);
 
   let colortbl = "{\\colortbl;";
   for (const c of colorList) {
