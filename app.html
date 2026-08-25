@@ -35,14 +35,19 @@
 <div class="resizer" id="resizer" role="separator" aria-orientation="vertical" aria-label="Resize panels" tabindex="0"></div>
 
 <section class="panel editor-panel">
-  <div class="editor-toolbar">
-    <button class="tool" id="back" title="Previous note">‹</button><button class="tool" id="forward" title="Next note">›</button>
-    <input id="title" class="title-inline" placeholder="Untitled note" autocomplete="off">
-    <button class="tool" id="maximize" title="Open note in new tab" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
-    <div class="toolbar-spacer"></div>
-    <button class="tool" id="closeEditor" title="Close editor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    <div class="saved"><span class="saved-dot" id="saveDot"></span></div>
-  </div>
+  <header class="editor-toolbar">
+    <div class="tb-row tb-note">
+      <button class="tool" id="back" title="Previous note">‹</button><button class="tool" id="forward" title="Next note">›</button>
+      <input id="title" class="title-inline" placeholder="Untitled note" autocomplete="off">
+      <button class="tool" id="maximize" title="Open note in new tab" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+      <button class="tool" id="closeEditor" title="Close editor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="saved"><span class="saved-dot" id="saveDot"></span></div>
+    </div>
+    <!-- CKEditor's native toolbar is relocated into this slot on init (see
+         js/editor.js) so the panel header and the format bar read as one bar.
+         Stays empty (and hidden) if the rich-text editor fails to load. -->
+    <div class="tb-row tb-format" id="formatBar"></div>
+  </header>
   <div class="editor">
     <div class="note-wrap">
       <textarea id="content" class="content" placeholder="Start writing…"></textarea>

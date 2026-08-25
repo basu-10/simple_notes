@@ -8,13 +8,17 @@ test("rich text table + blob image persists and resolves after reload", async ({
   const png = Buffer.from(PNG_B64, "base64");
 
   await page.goto("/app.html");
+  // The editor panel is hidden until a note is selected.
+  await page.locator("#newNote").click();
   const frame = page.frameLocator(".cke_wysiwyg_frame");
   await expect(page.locator(".cke_wysiwyg_frame")).toBeVisible();
+  // CKEditor's toolbar is relocated into the panel header (#formatBar) on init.
+  await expect(page.locator("#formatBar .cke_toolbox")).toBeVisible();
 
   // Insert an image via the custom AssetImage toolbar button (file picker path).
   const [chooser] = await Promise.all([
     page.waitForEvent("filechooser"),
-    page.locator('.cke_button[title="Insert image"]').click()
+    page.locator('#formatBar .cke_button[title="Insert image"]').click()
   ]);
   await chooser.setFiles({ name: "pic.png", mimeType: "image/png", buffer: png });
 
@@ -68,6 +72,7 @@ test("rich text table + blob image persists and resolves after reload", async ({
 
   // Reload — the image should resolve to a session blob: URL (not be broken).
   await page.reload();
+  await page.locator(".note-card").first().click();
   await expect(page.locator(".cke_wysiwyg_frame")).toBeVisible();
   const img2 = page.frameLocator(".cke_wysiwyg_frame").locator("img[data-asset-id]");
   await expect(img2).toHaveCount(1);

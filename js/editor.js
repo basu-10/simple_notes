@@ -27,6 +27,8 @@ function edConfig() {
     extraPlugins: "assetimage",
     removeButtons: "Image",
     filebrowserUploadUrl: "about:blank#disabled",
+    // Fallback only — styles.css stretches .cke_contents to fill the panel so the
+    // writing surface has no dead space under it.
     height: 480,
     autoGrow_onStartup: false,
     versionCheck: false,
@@ -109,6 +111,21 @@ function bindThemeSync() {
   }
 }
 
+// Fuse CKEditor's native toolbar with the panel's own header bar by moving the
+// editor's "top" space into the #formatBar slot in app.html. The toolbar keeps
+// working after the move because CKEditor 4 wires its buttons through inline
+// onclick/onmousedown attributes that call global CKEDITOR handlers rather than
+// listeners bound to the original container, and .cke_toolbox still swallows
+// mousedown so the editor selection survives a button press.
+function mountToolbar() {
+  const slot = $("formatBar");
+  const top = editor && editor.ui.space("top");
+  if (!slot || !top || !top.$) return;
+  slot.appendChild(top.$);
+  // CKEditor pins an inline height on the top space; the fused bar sizes itself.
+  top.$.style.height = "";
+}
+
 function bindCapture() {
   const tryCapture = evt => {
     const data = evt.data;
@@ -157,7 +174,7 @@ export async function initEditor() {
   editor = window.CKEDITOR.replace("content", edConfig());
   await new Promise(res => {
     const done = () => { ta.dataset.ckReady = "1"; res(); };
-    editor.on("instanceReady", () => { bindCapture(); bindThemeSync(); done(); });
+    editor.on("instanceReady", () => { bindCapture(); bindThemeSync(); mountToolbar(); done(); });
     editor.on("error", done);
     // Failsafe if instanceReady never fires.
     setTimeout(done, 4000);
