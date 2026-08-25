@@ -7,7 +7,7 @@ import {
   closeEditor, updateEditorVisibility
 } from "./ui.js";
 import {
-  createNote, createFolder, schedule, saveCurrent, deleteNote, toggleFavorite
+  createNote, createFolder, schedule, saveCurrent
 } from "./crud.js";
 import { setMode } from "./drive.js";
 import { exportData, importData } from "./export-import.js";
@@ -54,16 +54,6 @@ function runSearch() {
 }
 $("searchBtn").onclick = runSearch;
 $("search").addEventListener("keydown", e => { if (e.key === "Enter") runSearch(); });
-$("delete").onclick = () => {
-  const n = state.items.find(x => x.id === state.selected);
-  if (!n) return toast("Select a note first");
-  deleteNote(n);
-};
-$("star").onclick = () => {
-  const n = state.items.find(x => x.id === state.selected);
-  if (!n) return toast("Select a note first");
-  toggleFavorite(n);
-};
 $("theme").onclick = cycleTheme;
 const settingsBtn = $("settingsBtn");
 const settingsPop = $("settingsPop");

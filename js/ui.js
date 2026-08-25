@@ -235,6 +235,7 @@ export async function select(id) {
   $("title").value = n.title;
   await setContent(n.content);
   $("date").textContent = new Date(n.updatedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) + "  ·  " + new Date(n.updatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const dot = $("saveDot"); if (dot) dot.classList.remove("dirty");
   updateMeta(); renderAll(); updateStar();
   updateEditorVisibility();
   if (innerWidth <= 700) setMobileView("editor");

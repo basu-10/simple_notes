@@ -86,7 +86,7 @@ export async function rename(x) {
 
 export function schedule() {
   clearTimeout(state.timer);
-  $("saveState").textContent = "Unsaved";
+  $("saveDot").classList.add("dirty");
   state.timer = setTimeout(saveCurrent, 300);
 }
 
@@ -96,7 +96,7 @@ export async function saveCurrent() {
   n.title = $("title").value; n.content = getContent(); n.updatedAt = now();
   await put(n);
   updateDbSize();
-  $("saveState").textContent = "Saved";
+  $("saveDot").classList.remove("dirty");
   $("date").textContent = new Date(n.updatedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) + "  ·  " + new Date(n.updatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   updateMeta(); renderNotes();
   if (state.mode === "drive" && state.driveToken) driveSync(n).catch(console.warn);
