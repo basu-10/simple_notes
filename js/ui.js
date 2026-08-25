@@ -135,8 +135,6 @@ export function renderExplorer() {
   const ex = $("explorer");
   ex.innerHTML = "";
   ex.dataset.view = state.view;
-  const shell = document.querySelector(".shell");
-  if (shell) shell.classList.toggle("no-selection", !state.selected);
   if (state.showFavorites) {
     const favCount = state.items.filter(x => x.type === "note" && x.favorite && !x.deletedAt).length;
     $("folderTitle").textContent = "Favorites";

@@ -428,10 +428,6 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 }
 @media(max-width:700px){#maximize{display:none}}
 @media(max-width:700px){.fab{bottom:72px;right:14px}}
-.shell.no-selection{grid-template-columns:1fr 0 0}
-.shell.no-selection .resizer{display:none}
-.shell.no-selection .editor-panel{display:none}
-
 /* CKEditor chrome — re-skinned to match the site's neumorphic theme so the
    editor reads as part of the app instead of a bolted-on widget. !important is
    required because CKEditor injects its skin CSS at runtime, after this file. */
