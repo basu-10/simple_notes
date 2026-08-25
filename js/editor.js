@@ -124,6 +124,100 @@ function mountToolbar() {
   slot.appendChild(top.$);
   // CKEditor pins an inline height on the top space; the fused bar sizes itself.
   top.$.style.height = "";
+  setupToolbarReflow();
+}
+
+// Reflow the format toolbar: when the bar is too narrow for every button group
+// (small phones, or the web view resized down), the trailing groups are moved
+// whole into a "More" popup. Groups are moved as units, so a visual cluster of
+// buttons (e.g. Bold/Italic/Underline) always stays together — never split mid
+// group across the bar and the menu.
+let reflowAttached = false;
+function setupToolbarReflow() {
+  const slot = $("formatBar");
+  const top = editor && editor.ui.space("top");
+  if (!slot || !top || !top.$) return;
+  const topEl = top.$;
+  const toolbox = topEl.querySelector(".cke_toolbox");
+  if (!toolbox) return;
+
+  if (slot.querySelector(".tb-more-format")) return; // already set up
+
+  const more = document.createElement("div");
+  more.className = "tb-more-format";
+  more.innerHTML =
+    '<button class="tool tb-more-btn" type="button" aria-haspopup="true" ' +
+    'aria-expanded="false" aria-label="More formatting">' +
+    '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
+    '<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/>' +
+    '<circle cx="19" cy="12" r="2"/></svg></button>' +
+    '<div class="tb-more-pop" hidden role="menu" aria-label="More formatting"></div>';
+  slot.appendChild(more);
+  const moreBtn = more.querySelector(".tb-more-btn");
+  const pop = more.querySelector(".tb-more-pop");
+
+  const closePop = () => {
+    pop.hidden = true;
+    moreBtn.setAttribute("aria-expanded", "false");
+  };
+  moreBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    const willOpen = pop.hidden;
+    pop.hidden = !willOpen;
+    moreBtn.setAttribute("aria-expanded", String(willOpen));
+  });
+  // A formatting command ran from inside the menu — close it so it doesn't
+  // linger over the editor. CKEditor fires the command on mousedown, the
+  // click lands after, so closing here is safe.
+  pop.addEventListener("click", closePop);
+  document.addEventListener("click", e => {
+    if (!more.contains(e.target)) closePop();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && !pop.hidden) { closePop(); moreBtn.focus(); }
+  });
+
+  const reflow = () => {
+    const groups = [...toolbox.querySelectorAll(":scope > .cke_toolbar")];
+    const popped = [...pop.querySelectorAll(":scope > .cke_toolbar")];
+    // Start from a clean slate: everything back in the bar.
+    for (const g of popped) toolbox.appendChild(g);
+    more.hidden = false; // visible so its width is measurable
+
+    const slotCS = getComputedStyle(slot);
+    const pad = parseFloat(slotCS.paddingLeft) + parseFloat(slotCS.paddingRight);
+    const slotGap = parseFloat(slotCS.gap) || 6;
+    const tbGap = parseFloat(getComputedStyle(toolbox).gap) || 6;
+    const avail = slot.clientWidth - pad - more.getBoundingClientRect().width - slotGap;
+
+    let used = 0;
+    let split = groups.length;
+    for (let i = 0; i < groups.length; i++) {
+      const w = groups[i].getBoundingClientRect().width;
+      const add = used === 0 ? w : w + tbGap;
+      if (used + add <= avail) used += add;
+      else { split = i; break; }
+    }
+
+    if (split >= groups.length) {
+      more.hidden = true;
+      pop.hidden = true;
+      moreBtn.setAttribute("aria-expanded", "false");
+    } else {
+      for (let i = split; i < groups.length; i++) pop.appendChild(groups[i]);
+    }
+  };
+
+  if (!reflowAttached) {
+    reflowAttached = true;
+    window.addEventListener("resize", reflow);
+    if (typeof ResizeObserver !== "undefined") {
+      new ResizeObserver(reflow).observe(slot);
+    }
+  }
+  // Icons load asynchronously; measure after layout settles.
+  requestAnimationFrame(reflow);
+  setTimeout(reflow, 250);
 }
 
 function bindCapture() {

@@ -281,10 +281,26 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .tb-note{min-height:52px;padding:0 12px}
 .tb-format{
   min-height:46px;padding:5px 10px;border-top:1px solid var(--line);
-  overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
+  overflow:visible;
 }
 .tb-format::-webkit-scrollbar{display:none}
 .tb-format:empty{display:none}
+/* Overflow reflow: trailing toolbar groups move into this menu when the bar is
+   too narrow to show them all. Each group is moved whole, so buttons stay
+   clustered exactly as they appear in the bar. */
+.tb-more-format{position:relative;display:flex;flex:none;z-index:60}
+.tb-more-format[hidden]{display:none}
+.tb-more-btn{width:34px;height:34px}
+.tb-more-btn.on{color:var(--accent)}
+.tb-more-pop{
+  position:absolute;top:calc(100% + 6px);right:0;z-index:40;
+  display:flex;flex-direction:column;gap:6px;padding:6px;max-height:60vh;overflow:auto;
+  background:linear-gradient(145deg,var(--gs),var(--ge));
+  border:1px solid var(--neu-border);border-radius:14px;
+  box-shadow:6px 6px 16px var(--neu-lo),-6px -6px 16px var(--neu-hi);
+}
+.tb-more-pop[hidden]{display:none}
+.tb-more-pop .cke_toolbar{display:flex;align-items:center;gap:6px;flex:none}
 .saved{display:flex;align-items:center;gap:7px;padding-right:2px}
 .saved-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--saved-shadow);transition:background .2s ease}
 .saved-dot.dirty{background:var(--dirty)}
