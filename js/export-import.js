@@ -124,6 +124,26 @@ export async function exportData() {
   };
 }
 
+export function exportNote(item) {
+  if (!item) return;
+  const p = {
+    format: "notezen",
+    version: 2,
+    schemaVersion: 2,
+    exportedAt: now(),
+    items: [item]
+  };
+  const safe = (item.title || "Untitled note").replace(/[^\w.-]+/g, "_").slice(0, 60) || "note";
+  const fileName = safe + ".notezen";
+  const b = new Blob([JSON.stringify(p, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(b);
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("Downloaded “" + (item.title || "Untitled note") + "”");
+}
+
 export async function importData(file) {
   try {
     const text = await file.text();

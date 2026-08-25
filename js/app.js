@@ -10,10 +10,10 @@ import {
   createNote, createFolder, schedule, saveCurrent
 } from "./crud.js";
 import { setMode } from "./drive.js";
-import { exportData, importData } from "./export-import.js";
+import { exportData, importData, exportNote } from "./export-import.js";
 import { initTheme, cycleTheme } from "./theme.js";
 import { initShareIn } from "./share-in.js";
-import { initEditor, onEditorChange, isEditorReady } from "./editor.js";
+import { initEditor, onEditorChange, isEditorReady, getContent } from "./editor.js";
 
 $("newNote").onclick = createNote;
 $("newFolderBtn").onclick = createFolder;
@@ -100,12 +100,52 @@ const SOLO_PARAM = "note";
 function isSolo() {
   return new URLSearchParams(location.search).has(SOLO_PARAM);
 }
-$("maximize").onclick = () => {
+function openNoteInNewTab() {
   if (!state.selected) { toast("Open a note first"); return; }
   const url = new URL(location.href);
   url.searchParams.set(SOLO_PARAM, state.selected);
   window.open(url.toString(), "_blank", "noopener");
+}
+
+const noteMenuBtn = $("noteMenuBtn");
+const noteMenuPop = $("noteMenuPop");
+function openNoteMenu() {
+  noteMenuPop.hidden = false;
+  noteMenuBtn.setAttribute("aria-expanded", "true");
+  const r = noteMenuBtn.getBoundingClientRect();
+  const w = noteMenuPop.offsetWidth;
+  let left = Math.min(r.right - w, innerWidth - 12);
+  noteMenuPop.style.left = Math.max(12, left) + "px";
+  noteMenuPop.style.top = (r.bottom + 8) + "px";
+}
+function closeNoteMenu() {
+  noteMenuPop.hidden = true;
+  noteMenuBtn.setAttribute("aria-expanded", "false");
+}
+noteMenuBtn.onclick = e => {
+  e.stopPropagation();
+  if (noteMenuPop.hidden) openNoteMenu(); else closeNoteMenu();
 };
+noteMenuPop.onclick = e => {
+  const item = e.target.closest("[data-act]");
+  if (!item) return;
+  e.stopPropagation();
+  const act = item.dataset.act;
+  closeNoteMenu();
+  if (act === "maximize") openNoteInNewTab();
+  else if (act === "download") downloadCurrent();
+};
+function downloadCurrent() {
+  if (!state.selected) { toast("Open a note first"); return; }
+  const n = state.items.find(x => x.id === state.selected);
+  if (!n) { toast("Open a note first"); return; }
+  const copy = { ...n, title: $("title").value || n.title, content: getContent() };
+  exportNote(copy);
+}
+document.addEventListener("click", e => {
+  if (!noteMenuPop.hidden && !noteMenuPop.contains(e.target) && e.target !== noteMenuBtn) closeNoteMenu();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeNoteMenu(); });
 
 const homeOverlay = $("homeOverlay");
 function openHome() {
@@ -251,8 +291,7 @@ function showShortcuts() {
     const note = state.items.find(x => x.id === soloId);
     if (note) {
       document.querySelector(".shell").classList.add("solo");
-      const maxBtn = $("maximize");
-      if (maxBtn) maxBtn.style.display = "none";
+      if (noteMenuBtn) noteMenuBtn.style.display = "none";
       setMobileView("editor");
       await select(soloId);
     } else {

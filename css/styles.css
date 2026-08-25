@@ -285,11 +285,30 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 }
 .tb-format::-webkit-scrollbar{display:none}
 .tb-format:empty{display:none}
-.saved{display:flex;align-items:center;gap:6px}.saved-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--saved-shadow);transition:background .2s ease}
+.saved{display:flex;align-items:center;gap:7px;padding-right:2px}
+.saved-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--saved-shadow);transition:background .2s ease}
 .saved-dot.dirty{background:var(--dirty)}
+.tb-actions{display:flex;align-items:center;gap:4px;flex:none;margin-left:auto}
+.tb-more{position:relative}
 .tool{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--muted);flex:none}
 .tool:hover{background:var(--hover)}
 .tool.on{color:var(--accent)}
+.tb-pop{
+  position:fixed;z-index:30;min-width:188px;
+  display:flex;flex-direction:column;gap:2px;padding:6px;
+  background:linear-gradient(145deg,var(--gs),var(--ge));
+  border:1px solid var(--neu-border);border-radius:14px;
+  box-shadow:6px 6px 16px var(--neu-lo),-6px -6px 16px var(--neu-hi);
+}
+.tb-pop[hidden]{display:none}
+.tb-pop-item{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:9px 10px;border:0;border-radius:10px;background:transparent;cursor:pointer;
+  font:inherit;font-size:13px;color:var(--text);text-align:left;white-space:nowrap;
+}
+.tb-pop-item svg{width:17px;height:17px;flex:none;color:var(--muted)}
+.tb-pop-item:hover{background:var(--hover)}
+.tb-pop-item:active{background:var(--active)}
 .editor{
   flex:1;min-height:0;display:flex;justify-content:center;
   overflow:auto;padding:24px clamp(18px,3.2vw,48px) 26px;
@@ -449,7 +468,7 @@ svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.65;strok
 .shell.solo .resizer,
 .shell.solo .mobile-nav,
 .shell.solo .fab{display:none}
-@media(max-width:700px){#maximize{display:none}}
+
 @media(max-width:560px){.editor-footer .meta{display:none}}
 @media(max-width:700px){.fab{bottom:72px;right:14px}}
 /* CKEditor chrome — re-skinned to match the site's neumorphic theme so the

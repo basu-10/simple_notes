@@ -44,9 +44,19 @@
   <header class="editor-toolbar">
     <div class="tb-row tb-note">
       <input id="title" class="title-inline" placeholder="Untitled note" autocomplete="off">
-      <button class="tool" id="maximize" title="Open note in new tab" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
-      <button class="tool" id="closeEditor" title="Close editor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="saved"><span class="saved-dot" id="saveDot"></span></div>
+      <div class="tb-actions">
+        <div class="saved" id="saveStatus" title="All changes saved">
+          <span class="saved-dot" id="saveDot"></span>
+        </div>
+        <div class="tb-more">
+          <button class="tool" id="noteMenuBtn" title="Note actions" aria-haspopup="true" aria-expanded="false" aria-label="Note actions"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+          <div class="tb-pop" id="noteMenuPop" role="menu" aria-label="Note actions" hidden>
+            <button class="tb-pop-item" data-act="download" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Download note</span></button>
+            <button class="tb-pop-item" data-act="maximize" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg><span>Open in new tab</span></button>
+          </div>
+        </div>
+        <button class="tool" id="closeEditor" title="Close editor" aria-label="Close editor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
     </div>
     <!-- CKEditor's native toolbar is relocated into this slot on init (see
          js/editor.js) so the panel header and the format bar read as one bar.
