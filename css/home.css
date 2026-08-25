@@ -1,0 +1,111 @@
+/* In-app "Home" overlay (landing content) shown when the NoteZen brand is clicked.
+   Reuses the design tokens and component classes (.logo, .raised, .icon-btn, .brand)
+   already defined in styles.css, so only the landing layout classes live here. */
+
+.home-overlay{
+  position:fixed;inset:0;z-index:1000;overflow:auto;
+  background:var(--bg);color:var(--text);
+  background-image:
+    radial-gradient(circle at 12% 6%,var(--app-rad-a),transparent 30%),
+    radial-gradient(circle at 88% 94%,var(--app-rad-b),transparent 34%),
+    linear-gradient(135deg,var(--app-lin-a),var(--app-lin-b) 52%,var(--app-lin-c));
+}
+.home-overlay[hidden]{display:none}
+
+.home-overlay:before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.34;z-index:0;
+  background-image:radial-gradient(var(--dot) .65px,transparent .75px);
+  background-size:13px 13px;
+  -webkit-mask-image:linear-gradient(120deg,transparent 0%,rgba(0,0,0,.45) 35%,transparent 72%);
+  mask-image:linear-gradient(120deg,transparent 0%,rgba(0,0,0,.45) 35%,transparent 72%);
+}
+
+.home-top{
+  position:sticky;top:0;z-index:2;
+  max-width:1180px;margin:0 auto;padding:18px 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(180deg,var(--shell-bg),transparent);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+}
+.home-top .brand{font-size:20px}
+.home-top .icon-btn{width:43px;height:43px;border-radius:50%;display:grid;place-items:center}
+
+.home-inner{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:10px 28px 70px}
+
+.eyebrow{
+  font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600;
+}
+
+.hero{
+  padding:30px 0 60px;
+  display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;
+}
+.hero h1{
+  margin:14px 0 18px;font-size:clamp(40px,6vw,68px);font-weight:680;letter-spacing:-.04em;line-height:1.02;
+}
+.lede{margin:0;max-width:46ch;font-size:16px;line-height:1.7;color:var(--muted)}
+.hero-actions{display:flex;gap:14px;margin-top:32px;flex-wrap:wrap}
+
+.hero-art{display:flex;justify-content:center}
+.mock{
+  width:min(380px,92%);border-radius:28px;padding:16px;
+  background:linear-gradient(145deg,var(--gs),var(--ge));
+  border:1px solid var(--neu-border);
+  box-shadow:16px 16px 40px var(--neu-lo),-16px -16px 40px var(--neu-hi),inset 1px 1px 0 var(--neu-inset);
+}
+.mock-bar{display:flex;gap:7px;padding:4px 6px 14px}
+.mock-bar i{width:11px;height:11px;border-radius:50%;background:var(--fill-2);box-shadow:inset 1px 1px 2px var(--line)}
+.mock-body{padding:6px 8px}
+.mock-title{font-size:20px;font-weight:650;letter-spacing:-.03em;margin-bottom:14px}
+.mock-lines{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+.mock-lines span{height:9px;border-radius:6px;background:var(--fill);box-shadow:inset 1px 1px 2px var(--line)}
+.mock-card{
+  display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:16px;margin:8px 0;
+  background:linear-gradient(145deg,var(--gs),var(--ge));
+  box-shadow:5px 5px 12px var(--neu-lo),-5px -5px 12px var(--neu-hi);
+}
+.mock-card .dot{width:12px;height:12px;border-radius:50%;background:var(--accent);flex:none;box-shadow:0 0 0 3px rgba(255,255,255,.4),1px 1px 3px var(--neu-lo)}
+.mock-card div{display:flex;flex-direction:column;line-height:1.25}
+.mock-card b{font-size:13.5px;font-weight:600}
+.mock-card small{font-size:10.5px;color:var(--muted)}
+.mock-card.fav{background:var(--fav-bg)}
+
+.features{padding:20px 0 50px}
+.section-title{text-align:center;font-size:clamp(22px,3vw,30px);font-weight:640;letter-spacing:-.03em;margin:0 0 38px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.card{
+  padding:26px 24px;border-radius:24px;
+  background:linear-gradient(145deg,var(--gs),var(--ge));
+  border:1px solid var(--neu-border);
+  box-shadow:9px 9px 22px var(--neu-lo),-9px -9px 22px var(--neu-hi),inset 1px 1px 0 var(--neu-inset);
+}
+.card-ico{
+  width:48px;height:48px;border-radius:15px;display:grid;place-items:center;font-size:22px;margin-bottom:16px;
+  background:linear-gradient(145deg,var(--gs),var(--ge));
+  box-shadow:inset 2px 2px 5px var(--neu-lo),inset -2px -2px 5px var(--neu-hi);
+}
+.card h3{margin:0 0 8px;font-size:16px;font-weight:620;letter-spacing:-.02em}
+.card p{margin:0;font-size:13.5px;line-height:1.6;color:var(--muted)}
+
+.closer{padding:10px 0 30px}
+.closer-card{
+  text-align:center;padding:54px 28px;border-radius:32px;
+  background:linear-gradient(145deg,var(--gs),var(--ge));
+  border:1px solid var(--neu-border);
+  box-shadow:14px 14px 36px var(--neu-lo),-14px -14px 36px var(--neu-hi),inset 1px 1px 0 var(--neu-inset);
+}
+.closer-card h2{margin:0 0 10px;font-size:clamp(24px,3.4vw,34px);font-weight:660;letter-spacing:-.03em}
+.closer-card p{margin:0 0 28px;font-size:15px;color:var(--muted)}
+
+@media (max-width:920px){
+  .hero{grid-template-columns:1fr;gap:40px;padding-top:10px}
+  .hero-art{order:-1}
+  .grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:620px){
+  .home-top{padding:16px 18px}
+  .home-inner{padding:6px 18px 50px}
+  .hero{padding:16px 0 40px}
+  .grid{grid-template-columns:1fr}
+  .lede{font-size:15px}
+}

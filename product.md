@@ -34,6 +34,10 @@ progressive web app (PWA) and an Android app from a single web codebase.
    browser to the user's Drive. No server intermediary.
 8. **PWA installability** — installable on desktop/mobile, standalone display,
    offline-capable via service worker.
+9. **In-app Home / landing view** — clicking the NoteZen brand opens a
+   clutter-free landing panel (hero, feature highlights, "back to notes") inside
+   the app. It behaves identically on web and Android, avoiding cross-document
+   navigation (which is unreliable in the Android WebView).
 
 ## Non-Goals (what NoteZen deliberately is NOT)
 - Not a collaborative / multi-user real-time editor.
@@ -58,6 +62,8 @@ progressive web app (PWA) and an Android app from a single web codebase.
 - **Drive sync:** Switch to "Google Drive" → supply OAuth Client ID → authorize
   → notes sync as .txt files in Drive.
 - **Data portability:** Export from sidebar → re-import on another device.
+- **Home / landing:** Click the NoteZen brand → landing panel opens in place →
+  "Back to notes" (or close / Escape) returns to the app, without losing state.
 
 ## Known Limitations (product-level)
 - Drive sync is manual/per-note and user-credentialed, not continuous background

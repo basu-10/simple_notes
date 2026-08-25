@@ -236,7 +236,7 @@ export async function select(id) {
   await setContent(n.content);
   $("date").textContent = new Date(n.updatedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) + "  ·  " + new Date(n.updatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   const dot = $("saveDot"); if (dot) dot.classList.remove("dirty");
-  updateMeta(); renderAll(); updateStar();
+  updateMeta(); renderAll(); updateStar(); updateNotePos();
   updateEditorVisibility();
   if (innerWidth <= 700) setMobileView("editor");
 }
@@ -276,6 +276,22 @@ export function cycleNote(dir) {
   let n = (i === -1 ? (dir > 0 ? -1 : 0) : i) + dir;
   n = (n + notes.length) % notes.length;
   select(notes[n].id);
+}
+
+export function updateNotePos() {
+  const posEl = $("notePos");
+  const backEl = $("back");
+  const fwdEl = $("forward");
+  if (!posEl) return;
+  const folderId = state.folder || root()?.id;
+  const allNotes = kids(folderId).filter(x => x.type === "note");
+  const notes = [...allNotes.filter(x => x.favorite), ...sortNotes(allNotes.filter(x => !x.favorite))];
+  const at = notes.findIndex(x => x.id === state.selected);
+  const total = notes.length;
+  posEl.textContent = total ? (at + 1) + " / " + total : "—";
+  const disabled = total < 2;
+  if (backEl) backEl.disabled = disabled;
+  if (fwdEl) fwdEl.disabled = disabled;
 }
 
 export function updateMeta() {

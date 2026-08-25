@@ -27,10 +27,20 @@ There is **no application backend**. All persistence is client-side
 - External APIs: Google Identity Services (OAuth) + Google Drive API.
 
 ## 3. Repository Layout
-- `app.html` — the application shell (loaded after landing page).
+- `app.html` — the application shell. It also contains an in-app **Home
+  overlay** (landing content) opened by the brand button; this is how the
+  landing page is reached from inside the app on both web and Android.
 - `index.html` — marketing/landing page with its own inline theme bootstrap.
+  **Build constraint:** `scripts/build-www.mjs` overwrites this file with
+  `app.html` so Capacitor can launch the app from `index.html`. As a result the
+  standalone landing is web-only; inside the app the landing is shown via the
+  in-app Home overlay, not by navigating to `index.html` (which would just
+  reload the app on Android).
 - `css/styles.css` — application styles + theme variables.
   `css/landing.css` — landing page styles.
+  `css/home.css` — styles for the in-app Home overlay (landing content shown
+  inside the app). It reuses the tokens and shared component classes already
+  defined in `styles.css`, so it only defines the landing layout.
 - `js/` — application source (ES modules). This is the source of truth.
 - `www/` — Capacitor `webDir` build output (mirror of source assets).
   Capacitor and the web deploy both consume `www`. Keep `www` in sync with
@@ -45,7 +55,7 @@ There is **no application backend**. All persistence is client-side
 ### Module Map (under `js/`)
 | Module | Responsibility |
 |--------|----------------|
-| `app.js` | Entry point. Opens DB, inits theme, wires all UI event handlers, registers the service worker, bootstraps first-run state. |
+| `app.js` | Entry point. Opens DB, inits theme, wires all UI event handlers (including the in-app Home overlay), registers the service worker, bootstraps first-run state. |
 | `state.js` | Single in-memory app state object (selected note, current folder, mode, drive token, etc.). |
 | `db.js` | IndexedDB wrapper. Object stores: `items` (notes/folders) and `settings` (key/value). Provides CRUD, queries by index, soft-delete/restore/purge, storage-size estimate. |
 | `ui.js` | Rendering & DOM: folder tree, note list, editor, modals, toasts, mobile view switching. |

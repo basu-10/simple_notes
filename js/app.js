@@ -107,6 +107,22 @@ $("maximize").onclick = () => {
   window.open(url.toString(), "_blank", "noopener");
 };
 
+const homeOverlay = $("homeOverlay");
+function openHome() {
+  homeOverlay.hidden = false;
+  homeOverlay.setAttribute("aria-hidden", "false");
+  homeOverlay.scrollTop = 0;
+}
+function closeHome() {
+  homeOverlay.hidden = true;
+  homeOverlay.setAttribute("aria-hidden", "true");
+}
+$("brand").onclick = openHome;
+$("homeClose").onclick = closeHome;
+$("homeBrand").onclick = closeHome;
+homeOverlay.querySelectorAll("[data-home-close]").forEach(b => b.onclick = closeHome);
+homeOverlay.addEventListener("click", e => { if (e.target === homeOverlay) closeHome(); });
+
 const EXW_KEY = "notezen-exw";
 const exwMin = 240, exwMaxRatio = 0.7;
 function initResizer() {
@@ -182,7 +198,10 @@ document.addEventListener("keydown", e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openSettings(); $("search").focus(); }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); saveCurrent(); }
   if ((e.ctrlKey || e.metaKey) && e.key === "/") { e.preventDefault(); showShortcuts(); }
-  if (e.key === "Escape") { closeModal(); if (state.inTrash) { state.inTrash = false; renderAll(); } }
+  if (e.key === "Escape") {
+    if (!homeOverlay.hidden) { closeHome(); return; }
+    closeModal(); if (state.inTrash) { state.inTrash = false; renderAll(); }
+  }
 });
 
 function showShortcuts() {
