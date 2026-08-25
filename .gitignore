@@ -48,3 +48,7 @@ yarn-error.log*
 
 # ── Staged Android APK (served by the web deploy, not committed) ──
 downloads/*.apk
+
+
+tests
+test-results/
