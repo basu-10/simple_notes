@@ -126,22 +126,158 @@ export async function exportData() {
 
 export function exportNote(item) {
   if (!item) return;
-  const p = {
-    format: "notezen",
-    version: 2,
-    schemaVersion: 2,
-    exportedAt: now(),
-    items: [item]
-  };
+  const body = htmlToRtf(item.content, item.title);
   const safe = (item.title || "Untitled note").replace(/[^\w.-]+/g, "_").slice(0, 60) || "note";
-  const fileName = safe + ".notezen";
-  const b = new Blob([JSON.stringify(p, null, 2)], { type: "application/json" });
+  const fileName = safe + ".rtf";
+  const b = new Blob([body], { type: "application/rtf" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(b);
   a.download = fileName;
   a.click();
   URL.revokeObjectURL(a.href);
-  toast("Downloaded “" + (item.title || "Untitled note") + "”");
+  toast("Downloaded “" + (item.title || "Untitled note") + "” as RTF");
+}
+
+function rtfEscapeChar(ch) {
+  const code = ch.codePointAt(0);
+  if (ch === "\\" || ch === "{" || ch === "}") return "\\" + ch;
+  if (code <= 0x7f) return ch;
+  if (code <= 0xff) return "\\'" + code.toString(16).padStart(2, "0");
+  const signed = code >= 0x8000 ? code - 0x10000 : code;
+  return "\\u" + signed + "\\'3f";
+}
+
+function rtfEscape(text) {
+  let out = "";
+  for (const ch of (text || "")) out += rtfEscapeChar(ch);
+  return out;
+}
+
+function parseRtfColor(c) {
+  if (!c) return null;
+  c = c.trim();
+  if (c.startsWith("#")) {
+    let h = c.slice(1);
+    if (h.length === 3) h = h.split("").map(x => x + x).join("");
+    const num = parseInt(h, 16);
+    if (Number.isNaN(num)) return null;
+    return [(num >> 16) & 255, (num >> 8) & 255, num & 255].join(",");
+  }
+  const m = c.match(/rgba?\(([^)]+)\)/);
+  if (m) {
+    const p = m[1].split(",").map(s => parseFloat(s));
+    return [p[0], p[1], p[2]].map(Math.round).join(",");
+  }
+  return null;
+}
+
+function parseRtfFontSize(s) {
+  if (!s) return null;
+  const m = s.match(/([\d.]+)px/);
+  return m ? parseFloat(m[1]) : null;
+}
+
+function htmlToRtf(html, title) {
+  let out = "";
+  const colorList = [];
+  const colorIndex = new Map();
+
+  function colorFor(rgb) {
+    if (colorIndex.has(rgb)) return colorIndex.get(rgb);
+    const idx = colorList.length + 1;
+    colorList.push(rgb);
+    colorIndex.set(rgb, idx);
+    return idx;
+  }
+
+  function inlineStyle(el) {
+    const style = el.style || {};
+    let on = "", off = "";
+    const col = parseRtfColor(style.color);
+    if (col) { on += "\\cf" + colorFor(col) + " "; off = "\\cf0 " + off; }
+    const fs = parseRtfFontSize(style.fontSize);
+    if (fs) { on += "\\fs" + Math.round(fs * 2) + " "; off = "\\fs22 " + off; }
+    return { on, off };
+  }
+
+  function renderNode(node) {
+    for (const child of node.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) out += rtfEscape(child.nodeValue);
+      else if (child.nodeType === Node.ELEMENT_NODE) renderElement(child);
+    }
+  }
+
+  function renderList(el, ordered) {
+    let n = 1;
+    for (const li of el.children) {
+      if (li.tagName.toLowerCase() !== "li") { renderElement(li); continue; }
+      out += "\\par ";
+      out += ordered ? (n + ".\\tab ") : "\\u2022\\tab ";
+      n++;
+      renderNode(li);
+      out += "\\par ";
+    }
+  }
+
+  function renderElement(el) {
+    const tag = el.tagName.toLowerCase();
+    const { on, off } = inlineStyle(el);
+    switch (tag) {
+      case "br": out += "\\par "; return;
+      case "p":
+      case "div":
+        out += on; renderNode(el); out += off + "\\par "; return;
+      case "b":
+      case "strong": out += on + "\\b "; renderNode(el); out += "\\b0 " + off; return;
+      case "i":
+      case "em": out += on + "\\i "; renderNode(el); out += "\\i0 " + off; return;
+      case "u": out += on + "\\ul "; renderNode(el); out += "\\ul0 " + off; return;
+      case "s":
+      case "strike":
+      case "del": out += on + "\\strike "; renderNode(el); out += "\\strike0 " + off; return;
+      case "h1": out += on + "\\fs36\\b "; renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
+      case "h2": out += on + "\\fs30\\b "; renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
+      case "h3": out += on + "\\fs28\\b "; renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
+      case "h4": out += on + "\\fs26\\b "; renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
+      case "h5":
+      case "h6": out += on + "\\fs24\\b "; renderNode(el); out += "\\b0\\fs22 " + off + "\\par "; return;
+      case "blockquote": out += on + "\\li720\\ri720 "; renderNode(el); out += "\\li0\\ri0 " + off + "\\par "; return;
+      case "ul": renderList(el, false); return;
+      case "ol": renderList(el, true); return;
+      case "a": {
+        const href = el.getAttribute("href");
+        renderNode(el);
+        if (href) out += " (" + rtfEscape(href) + ")";
+        out += "\\par "; return;
+      }
+      case "img": {
+        const alt = el.getAttribute("alt");
+        if (alt) out += rtfEscape(alt);
+        return;
+      }
+      case "table": out += "\\par "; renderNode(el); out += "\\par "; return;
+      case "tr": renderNode(el); out += "\\par "; return;
+      case "td":
+      case "th": renderNode(el); out += "\\tab "; return;
+      case "hr": out += "\\par\\line "; return;
+      default: out += on; renderNode(el); out += off; return;
+    }
+  }
+
+  const doc = new DOMParser().parseFromString(html || "", "text/html");
+  if (title) out += "\\fs36\\b " + rtfEscape(title) + "\\b0\\fs22\\par ";
+  renderNode(doc.body);
+
+  let colortbl = "{\\colortbl;";
+  for (const c of colorList) {
+    const [r, g, b] = c.split(",").map(Number);
+    colortbl += "\\red" + r + "\\green" + g + "\\blue" + b + ";";
+  }
+  colortbl += "}";
+
+  return "{\\rtf1\\ansi\\ansicpg1252\\uc1\\deff0\\f0" +
+    "{\\fonttbl{\\f0\\fnil\\fcharset0 Calibri;}}" +
+    colortbl + "\\f0\\fs22 " + out + "}";
 }
 
 export async function importData(file) {
