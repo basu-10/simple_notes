@@ -3,7 +3,8 @@ import { state } from "./state.js";
 import { openDB, all, setting, put, updateDbSize, saveSetting } from "./db.js";
 import {
   select, renderAll, setMobileView,
-  updateMeta, search, root, closeModal, renderTrash, modal, cycleNote
+  updateMeta, search, root, closeModal, renderTrash, modal, cycleNote,
+  closeEditor, updateEditorVisibility
 } from "./ui.js";
 import {
   createNote, createFolder, schedule, saveCurrent, deleteNote, toggleFavorite
@@ -177,6 +178,7 @@ function initResizer() {
 initResizer();
 $("back").onclick = () => cycleNote(-1);
 $("forward").onclick = () => cycleNote(1);
+$("closeEditor").onclick = () => closeEditor();
 $("modalBackdrop").onclick = e => e.target === e.currentTarget && closeModal();
 $("trashBtn").onclick = () => { state.inTrash = !state.inTrash; state.showFavorites = false; state.inTrash ? renderTrash() : renderAll(); };
 document.addEventListener("keydown", e => {
@@ -228,6 +230,7 @@ function showShortcuts() {
   setMobileView("files");
   updateDbSize();
   renderAll();
+  updateEditorVisibility();
   if (await setting("mode") === "drive") setMode("drive");
   initShareIn();
 })().catch(e => { console.error(e); toast("Could not initialize"); });

@@ -1,8 +1,8 @@
 import { $, uid, now, esc, toast } from "./utils.js";
 import { state } from "./state.js";
 import { put, del, updateDbSize, softDelete, restore, purge, getTrash, gcAssets } from "./db.js";
-import { select, renderAll, renderNotes, modal, closeModal, root, kids, updateMeta, openMenu, updateStar, isDescendant, setMobileView } from "./ui.js";
-import { getContent } from "./editor.js";
+import { select, renderAll, renderNotes, modal, closeModal, root, kids, updateMeta, openMenu, updateStar, isDescendant, setMobileView, updateEditorVisibility } from "./ui.js";
+import { setContent, getContent } from "./editor.js";
 
 const FOLDER_COLORS = [["#4b8fe6", "Blue"], ["#5bbf6a", "Green"], ["#e6c14b", "Gold"], ["#ec9a4b", "Orange"], ["#e3555a", "Coral"], ["#e06fa8", "Pink"], ["#8a6fe0", "Violet"], ["#3fb7ab", "Teal"]];
 
@@ -126,8 +126,8 @@ export async function deleteNote(x) {
       select(next.id);
     } else {
       renderAll();
-      $("title").value = "";
-      $("content").value = "";
+      await setContent("");
+      updateEditorVisibility();
       if (innerWidth <= 700) setMobileView("files");
     }
   } else {

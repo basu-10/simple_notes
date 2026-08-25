@@ -1,7 +1,7 @@
 import { $, esc, toast, stripHtml } from "./utils.js";
 import { state } from "./state.js";
 import { setContent, getContent } from "./editor.js";
-import { rename, moveNote, duplicateNote, deleteNote, deleteFolder, restoreFromTrash, purgeFromTrash, emptyTrash, toggleFavorite, changeFolderColor, duplicateFolder, moveFolder } from "./crud.js";
+import { rename, moveNote, duplicateNote, deleteNote, deleteFolder, restoreFromTrash, purgeFromTrash, emptyTrash, toggleFavorite, changeFolderColor, duplicateFolder, moveFolder, saveCurrent } from "./crud.js";
 import { getTrash } from "./db.js";
 
 export function kids(id) {
@@ -236,7 +236,24 @@ export async function select(id) {
   await setContent(n.content);
   $("date").textContent = new Date(n.updatedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) + "  ·  " + new Date(n.updatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   updateMeta(); renderAll(); updateStar();
+  updateEditorVisibility();
   if (innerWidth <= 700) setMobileView("editor");
+}
+
+export function updateEditorVisibility() {
+  const shell = document.querySelector(".shell");
+  if (shell) shell.classList.toggle("editor-hidden", !state.selected);
+}
+
+export async function closeEditor() {
+  if (state.selected) await saveCurrent();
+  state.selected = null;
+  $("title").value = "";
+  await setContent("");
+  updateMeta();
+  if (innerWidth <= 700) setMobileView("files");
+  updateEditorVisibility();
+  renderAll();
 }
 
 export function updateStar() {
