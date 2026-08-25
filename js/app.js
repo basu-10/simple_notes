@@ -96,24 +96,16 @@ function applySort(sort) {
 }
 $("viewOpts").querySelectorAll("button").forEach(b => b.onclick = () => applyView(b.dataset.view));
 $("sortOpts").querySelectorAll("button").forEach(b => b.onclick = () => applySort(b.dataset.sort));
-const MAX_ICON = '<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/>';
-const MIN_ICON = '<path d="M3 8h3a2 2 0 0 1 2 2v3M21 8h-3a2 2 0 0 0-2 2v3M3 16h3a2 2 0 0 0 2-2v-3M21 16h-3a2 2 0 0 1-2-2v-3"/>';
-function applyMaximize(on) {
-  const shell = document.querySelector(".shell");
-  if (!shell) return;
-  shell.classList.toggle("max", on);
-  const b = $("maximize");
-  if (b) {
-    b.classList.toggle("on", on);
-    b.setAttribute("aria-pressed", on ? "true" : "false");
-    b.title = on ? "Exit focus mode" : "Focus mode (collapse panels)";
-    const s = b.querySelector("svg");
-    if (s) s.innerHTML = on ? MIN_ICON : MAX_ICON;
-  }
-  try { localStorage.setItem("notezen-max", on ? "1" : "0"); } catch (e) {}
+const SOLO_PARAM = "note";
+function isSolo() {
+  return new URLSearchParams(location.search).has(SOLO_PARAM);
 }
-$("maximize").onclick = () => applyMaximize(!document.querySelector(".shell").classList.contains("max"));
-try { if (localStorage.getItem("notezen-max") === "1") applyMaximize(true); } catch (e) {}
+$("maximize").onclick = () => {
+  if (!state.selected) { toast("Open a note first"); return; }
+  const url = new URL(location.href);
+  url.searchParams.set(SOLO_PARAM, state.selected);
+  window.open(url.toString(), "_blank", "noopener");
+};
 
 const EXW_KEY = "notezen-exw";
 const exwMin = 240, exwMaxRatio = 0.7;
@@ -131,7 +123,7 @@ function initResizer() {
     return Math.min(Math.max(w, exwMin), max);
   }
   function down(e) {
-    if (innerWidth <= 700 || shell.classList.contains("max")) return;
+    if (innerWidth <= 700 || isSolo()) return;
     dragging = true;
     startX = e.clientX;
     startW = parseFloat(getComputedStyle(shell).gridTemplateColumns.split(" ")[0]) || 460;
@@ -168,7 +160,21 @@ function initResizer() {
 initResizer();
 $("back").onclick = () => cycleNote(-1);
 $("forward").onclick = () => cycleNote(1);
-$("closeEditor").onclick = () => closeEditor();
+$("closeEditor").onclick = () => {
+  if (isSolo()) {
+    saveCurrent().then(() => {
+      const url = new URL(location.href);
+      if (url.searchParams.has(SOLO_PARAM)) {
+        url.searchParams.delete(SOLO_PARAM);
+        location.href = url.toString();
+      } else {
+        window.close();
+      }
+    });
+    return;
+  }
+  closeEditor();
+};
 $("modalBackdrop").onclick = e => e.target === e.currentTarget && closeModal();
 $("trashBtn").onclick = () => { state.inTrash = !state.inTrash; state.showFavorites = false; state.inTrash ? renderTrash() : renderAll(); };
 document.addEventListener("keydown", e => {
@@ -221,6 +227,19 @@ function showShortcuts() {
   updateDbSize();
   renderAll();
   updateEditorVisibility();
+  const soloId = new URLSearchParams(location.search).get(SOLO_PARAM);
+  if (soloId) {
+    const note = state.items.find(x => x.id === soloId);
+    if (note) {
+      document.querySelector(".shell").classList.add("solo");
+      const maxBtn = $("maximize");
+      if (maxBtn) maxBtn.style.display = "none";
+      setMobileView("editor");
+      await select(soloId);
+    } else {
+      toast("Note not found — opening full app");
+    }
+  }
   if (await setting("mode") === "drive") setMode("drive");
   initShareIn();
 })().catch(e => { console.error(e); toast("Could not initialize"); });
